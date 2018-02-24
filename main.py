@@ -7,14 +7,14 @@ import torch.nn as nn
 import torch.nn.functional as f
 import constants
 from gan_model import GAN
-
+import util
 
 def main():
-    model_options = constants.MAIN_MODEL_OPTIONS
-
-    text_embed = [1,2,3,4,5]
-    gan = GAN(model_options)
-    gan.build_model(text_embed)
+    # Load
+    text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
+    print text_caption_dict
+    # gan = GAN(constants.MAIN_MODEL_OPTIONS)
+    # gan.build_model(text_embed)
 
 if __name__ == '__main__':
     main()

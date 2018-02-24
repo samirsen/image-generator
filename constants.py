@@ -14,7 +14,6 @@ GET_NLTK_PUNKT = False
 GET_PRETRAINED_MODEL = False
 
 
-
 '''
 data_loader.py constants
 '''
@@ -26,7 +25,15 @@ SMALL_DATASET = 'flowers/smalljpg'
 # Choose which directory holds the images you want for the flowers
 DIRECTORY_PATH = SMALL_DATASET
 
+# The name of the output file that the word vectors will be saved as.
+# This file name should end with '.hdf5'
+VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 
+
+
+'''
+main.py
+'''
 # Three channels for Red, Green, and Blue
 RGB_CHANNELS = 3
 

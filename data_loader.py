@@ -94,7 +94,7 @@ def save_caption_vectors_flowers(data_dir):
 		print "Seconds", time.time() - st
 
 
-	h = h5py.File(join(data_dir, 'flower_tv.hdf5'))
+	h = h5py.File(join(data_dir, constants.VEC_OUTPUT_FILE_NAME))
 	for key in encoded_captions:
 		h.create_dataset(key, data=encoded_captions[key])
 	h.close()

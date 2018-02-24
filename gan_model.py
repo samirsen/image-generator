@@ -15,9 +15,12 @@ class GAN:
 
         # Add text input layers to the layers dict
         self.layers['text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+        torch.nn.init.xavier_uniform(self.layers['text_embed_fc_layer'].weight)
+        
         conv_vec_length = self.options['g_channels'] * self.options['gan_layer_filter_sizes'][0]**2 \
                                                         * self.options['gan_layer_num_channels'][0]
         self.layers['text_noise_fc_layer'] = nn.Linear(self.options['caption_vec_len'] + self.options['z_dim'], conv_vec_length)
+        torch.nn.init.xavier_uniform(self.layers['text_noise_fc_layer'].weight)
 
         # Add hidden GAN layers to the layers dict
         for i in range(1, self.options['gan_num_layers'] + 1):
@@ -25,6 +28,7 @@ class GAN:
                                                                 self.options['gan_layer_num_channels'][i],                 \
                                                                 kernel_size = (self.options['gan_layer_filter_sizes'][i-1], \
                                                                                 self.options['gan_layer_filter_sizes'][i]))
+            torch.nn.init.xavier_uniform(self.layers['g_layer_' + i].weight)
 
     # Builds the GAN given instance, the text embeddings and the noise for the text embeddings
     def build_model(self, text_embed, noise):
