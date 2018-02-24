@@ -1,5 +1,6 @@
 '''
 gan.py
+Based on the model from https://github.com/paarthneekhara/text-to-image
 '''
 import torch
 import torch.nn as nn
@@ -14,14 +15,15 @@ class GAN:
 
         # Add text input layers to the layers dict
         self.layers['text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
-        conv_vec_length = self.options['g_channels'] * gan_layer_filter_sizes[0]**2 * gan_layer_num_channels[0]
+        conv_vec_length = self.options['g_channels'] * self.options['gan_layer_filter_sizes'][0]**2 \
+                                                        * self.options['gan_layer_num_channels'][0]
         self.layers['text_noise_fc_layer'] = nn.Linear(self.options['caption_vec_len'] + self.options['z_dim'], conv_vec_length)
 
         # Add hidden GAN layers to the layers dict
         for i in range(1, self.options['gan_num_layers'] + 1):
             self.layers['g_layer_' + i] = nn.ConvTranspose2d(self.options['gan_layer_num_channels'][i-1],                   \
-                                                                self.options['gan_layer_num_channels'][i]),                 \
-                                                                kernel_size = (self.options['gan_layer_filter_sizes'][i-1]  \
+                                                                self.options['gan_layer_num_channels'][i],                 \
+                                                                kernel_size = (self.options['gan_layer_filter_sizes'][i-1], \
                                                                                 self.options['gan_layer_filter_sizes'][i]))
 
     # Builds the GAN given instance, the text embeddings and the noise for the text embeddings
@@ -48,7 +50,6 @@ class GAN:
         image_size = self.options['image_size']
 
         # Make text embeddings
-
         reduced_text_embed = f.leaky_relu(self.text_embed_fc_layer(t_text_embed), negative_slope=self.options['leak'])
 
         # Concatenate the noise and the reduced text embedding
@@ -69,7 +70,7 @@ class GAN:
             X = self.layers['g_layer_' + i](X)
             if self.options['gan_layer_activation_func'] == 'relu':
                 X = f.relu(X)
-            elif self.options['gan_layer_activation_func'] == 'tanh'
+            elif self.options['gan_layer_activation_func'] == 'tanh':
                 X = f.tanh(X)
 
 
