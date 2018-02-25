@@ -5,6 +5,7 @@ Based on the model from https://github.com/paarthneekhara/text-to-image
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
+import constants
 
 class GAN:
     def __init__(self, options):
@@ -16,19 +17,30 @@ class GAN:
         # Add text input layers to the layers dict
         self.layers['text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
         torch.nn.init.xavier_uniform(self.layers['text_embed_fc_layer'].weight)
-        
-        conv_vec_length = self.options['g_channels'] * self.options['gan_layer_filter_sizes'][0]**2 \
-                                                        * self.options['gan_layer_num_channels'][0]
+        if constants.PRINT_MODEL_STATUS: print('Text Embedded Fully Connected Layer Created')
+
+        conv_vec_length = 1
+        for i in self.options['gan_layer_num_channels'][1:]:
+            conv_vec_length *= i
+
         self.layers['text_noise_fc_layer'] = nn.Linear(self.options['caption_vec_len'] + self.options['z_dim'], conv_vec_length)
         torch.nn.init.xavier_uniform(self.layers['text_noise_fc_layer'].weight)
+        if constants.PRINT_MODEL_STATUS: print('Text Noise Fully Connected Layer Created')
 
         # Add hidden GAN layers to the layers dict
         for i in range(1, self.options['gan_num_layers'] + 1):
-            self.layers['g_layer_' + i] = nn.ConvTranspose2d(self.options['gan_layer_num_channels'][i-1],                   \
-                                                                self.options['gan_layer_num_channels'][i],                 \
-                                                                kernel_size = (self.options['gan_layer_filter_sizes'][i-1], \
-                                                                                self.options['gan_layer_filter_sizes'][i]))
+            input_channels = self.options['gan_layer_num_channels'][i-1]
+            output_channels = self.options['gan_layer_num_channels'][i]
+            layer_filter_size = (self.options['gan_layer_filter_sizes'][i],self.options['gan_layer_filter_sizes'][i])
+            layer_stride = self.options['gan_layer_stride'][i]
+            layer_padding = self.options['gan_layer_padding'][i]
+            self.layers['g_layer_' + i] = nn.ConvTranspose2d(input_channels, output_channels,   \
+                                                                kernel_size=layer_filter_size,  \
+                                                                stride=layer_stride,            \
+                                                                padding=layer_padding)
             torch.nn.init.xavier_uniform(self.layers['g_layer_' + i].weight)
+            if constants.PRINT_MODEL_STATUS: print('Generator Layer ' + i + ' Created')
+        print('Entire Model Created')
 
     # Builds the GAN given instance, the text embeddings and the noise for the text embeddings
     def build_model(self, text_embed, noise):
