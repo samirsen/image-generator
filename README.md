@@ -1,5 +1,5 @@
 # image-generator
-Generate images from captions using GANs
+Generate images from captions using GANs. Runs on PyTorch.
 
 ## Authors
 Karan Singhal, Samir Sen, Trevor Tsue
