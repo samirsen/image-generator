@@ -108,10 +108,10 @@ def download_dataset(data_name):
 def main():
     create_data_paths()
 
-    if GET_FLOWER_IMAGES: download_dataset('flowers')
-    if GET_SKIPTHOUGHT_MODEL: download_dataset('skipthoughts')
-    if GET_NLTK_PUNKT: download_dataset('nltk_punkt')
-    if GET_PRETRAINED_MODEL: download_dataset('pretrained_model')
+    download_dataset('flowers')
+    download_dataset('skipthoughts')
+    download_dataset('nltk_punkt')
+    # download_dataset('pretrained_model')
 
     print('Done')
 

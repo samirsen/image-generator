@@ -5,16 +5,6 @@ Holds all of the constants info of the project
 
 
 '''
-download_data.py constants
-'''
-# Change these variables to true to download them when you run download_data.py
-GET_FLOWER_IMAGES = False
-GET_SKIPTHOUGHT_MODEL = False
-GET_NLTK_PUNKT = False
-GET_PRETRAINED_MODEL = False
-
-
-'''
 data_loader.py constants
 '''
 # The entire 102 Category Flower Dataset
