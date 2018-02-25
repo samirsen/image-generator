@@ -9,7 +9,7 @@ data_loader.py constants
 '''
 # The entire 102 Category Flower Dataset
 ENTIRE_DATASET = 'flowers/jpg'
-# A small subset of the entire flower dataset (used for testing code out)
+# A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
 SMALL_DATASET = 'flowers/smalljpg'
 
 # Choose which directory holds the images you want for the flowers
