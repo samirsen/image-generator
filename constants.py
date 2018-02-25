@@ -8,9 +8,9 @@ Holds all of the constants info of the project
 data_loader.py constants
 '''
 # The entire 102 Category Flower Dataset
-ENTIRE_DATASET = 'flowers/jpg'
+ENTIRE_DATASET = 'flowers/jpg/'
 # A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
-SMALL_DATASET = 'flowers/smalljpg'
+SMALL_DATASET = 'flowers/smalljpg/'
 
 # Choose which directory holds the images you want for the flowers
 DIRECTORY_PATH = SMALL_DATASET
@@ -25,6 +25,7 @@ VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 Model Constants
 main.py, gan_model.py
 '''
+# If true, prints status of creating model
 PRINT_MODEL_STATUS = True
 
 # Three channels for Red, Green, and Blue
@@ -45,7 +46,7 @@ MAIN_MODEL_OPTIONS = {
     'caption_vec_len':4800,     # Dimensions for the embedded captions vector
     't_dim':256,                # Dimensions for the text vector inputted into the GAN
     'leak':0.2,             # Leak for Leaky ReLU
-    'z_dim':1,
+    'z_dim':100,
     'batch_size':BATCH_SIZE,
     'image_size':IMAGE_SIZE,
     'g_channels':GAN_CHANNELS,          # The basis for the number of channels in the generator

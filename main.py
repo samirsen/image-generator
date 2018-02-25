@@ -8,16 +8,21 @@ import torch.nn.functional as f
 import constants
 from gan_model import GAN
 import util
+import numpy as np
 
 def main():
+    model_options = constants.MAIN_MODEL_OPTIONS
+
     # Load the caption text vectors
     text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
+    image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
+    noise_vec = np.random.uniform(-1, 1, [len(text_caption_dict), model_options['z_dim']])
 
-    # TODO: get images and connect them to the captions
-
-    model_options = constants.MAIN_MODEL_OPTIONS
     gan = GAN(model_options)
-    # gan.build_model(text_embed)
+
+    # TODO: break text captions into multidimensional list
+    # for k in text_caption_dict:
+    #     gan.build_model(text_caption_dict[k], noise_vec)
 
 if __name__ == '__main__':
     main()
