@@ -13,14 +13,16 @@ class GAN:
 
         # Create the layers dict
         self.layers = {}
+        if constants.PRINT_MODEL_STATUS: print('Creating Model...\n')
 
         # Add text input layers to the layers dict
         self.layers['text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
         torch.nn.init.xavier_uniform(self.layers['text_embed_fc_layer'].weight)
         if constants.PRINT_MODEL_STATUS: print('Text Embedded Fully Connected Layer Created')
 
+        # Calculate the length of the input of the GAN
         conv_vec_length = 1
-        for i in self.options['gan_layer_num_channels'][1:]:
+        for i in self.options['gan_layer_conv_sizes'][0][1:]:
             conv_vec_length *= i
 
         self.layers['text_noise_fc_layer'] = nn.Linear(self.options['caption_vec_len'] + self.options['z_dim'], conv_vec_length)
@@ -34,13 +36,14 @@ class GAN:
             layer_filter_size = (self.options['gan_layer_filter_sizes'][i],self.options['gan_layer_filter_sizes'][i])
             layer_stride = self.options['gan_layer_stride'][i]
             layer_padding = self.options['gan_layer_padding'][i]
-            self.layers['g_layer_' + i] = nn.ConvTranspose2d(input_channels, output_channels,   \
+            self.layers['g_layer_' + str(i)] = nn.ConvTranspose2d(input_channels, output_channels,   \
                                                                 kernel_size=layer_filter_size,  \
                                                                 stride=layer_stride,            \
                                                                 padding=layer_padding)
-            torch.nn.init.xavier_uniform(self.layers['g_layer_' + i].weight)
-            if constants.PRINT_MODEL_STATUS: print('Generator Layer ' + i + ' Created')
-        print('Entire Model Created')
+
+            torch.nn.init.xavier_uniform(self.layers['g_layer_' + str(i)].weight)
+            if constants.PRINT_MODEL_STATUS: print('Generator Layer ' + str(i) + ' Created')
+        print('Entire Model Created\n')
 
     # Builds the GAN given instance, the text embeddings and the noise for the text embeddings
     def build_model(self, text_embed, noise):
@@ -53,7 +56,7 @@ class GAN:
         t_noise = torch.Tensor(noise)               # dim: batch_size x z_dim
 
         # Make fake image from generator
-        fake_image = self.generator(t_text_embed, t_noise)
+        # fake_image = self.generator(t_text_embed, t_noise)
 
         # Run (real image, real caption), (wrong image, real caption), and (fake image, real caption) in discriminator
 
