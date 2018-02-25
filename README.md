@@ -1,21 +1,32 @@
 # image-generator
 Generate images from captions using GANs
 
+## Authors
 Karan Singhal, Samir Sen, Trevor Tsue
 
+## Acknowledgements
+Borrowed code from
+https://github.com/paarthneekhara/text-to-image
 
-Go to constants.py and change all of the following to True:
-GET_FLOWER_IMAGES 
-GET_SKIPTHOUGHT_MODEL
-GET_NLTK_PUNKT
-GET_PRETRAINED_MODEL
+Borrowed architecture from
+https://github.com/reedscot/icml2016
 
-Then run the following to download all of the data:
+
+## Getting started
+Run the following to download all of the data:
+```
 python download_data.py
+```
 
 Then run the following to generate the skipthought vectors:
+```
 python data_loader.py
+```
 
-Then run the main file
+
+## Training the Data
+Run the main file to start training the GAN
+```
 python main.py
+```
 
