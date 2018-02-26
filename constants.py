@@ -46,12 +46,14 @@ BATCH_SIZE = 64
 MAIN_MODEL_OPTIONS = {
     'caption_vec_len':4800,     # Dimensions for the embedded captions vector
     't_dim':256,                # Dimensions for the text vector inputted into the GAN
-    'leak':0.2,             # Leak for Leaky ReLU
     'z_dim':100,
     'batch_size':BATCH_SIZE,
     'image_size':IMAGE_SIZE,
     'g_channels':GAN_CHANNELS,          # The basis for the number of channels in the generator
     'd_channels':None,
+    'leak':0.2,                         # Leak for Leaky ReLU
+    'bn_momentum':0.9,                  # Batch norm momentum
+    'bn_eps':1e-05,                     # Batch norm epsilon
     'gan_num_layers':4,                 # Number of layers in the GAN
     'gan_layer_conv_sizes':[            # List of shape of each layer (number entries, num channels, height, width), starting at input layer
                                 [-1, GAN_CHANNELS * 8, int(IMAGE_SIZE/16), int(IMAGE_SIZE/16)],

@@ -13,9 +13,9 @@ import collections
 class GAN:
     def __init__(self, options):
         self.options = options
-
-        # Create the layers dict
         self.layers = collections.OrderedDict({})
+        self.batch_norm = collections.OrderedDict({})
+
         if constants.PRINT_MODEL_STATUS: print('Creating Model...\n')
 
         # Add text input layers to the layers dict
@@ -39,6 +39,11 @@ class GAN:
             layer_filter_size = (self.options['gan_layer_filter_sizes'][i],self.options['gan_layer_filter_sizes'][i])
             layer_stride = self.options['gan_layer_stride'][i]
             layer_padding = self.options['gan_layer_padding'][i]
+
+            # Create batch norm for each layer
+            self.batch_norm['bn_layer_' + str(i)] = nn.BatchNorm2d(input_channels, self.options['bn_eps'], self.options['bn_momentum'])
+
+            # Create each generator layer
             self.layers['g_layer_' + str(i)] = nn.ConvTranspose2d(input_channels, output_channels,  \
                                                                 kernel_size=layer_filter_size,      \
                                                                 stride=layer_stride,                \
@@ -88,11 +93,14 @@ class GAN:
 
         # Go through each hidden layer of the GAN
         for i in range(1, self.options['gan_num_layers'] + 1):
-            '''
-            TODO ADD BATCH NORM
-            '''
+            # Apply batch norm
+            X = self.batch_norm['bn_layer_' + str(i)](X)
+
+            # Run conv transpose layer
             new_size = self.options['gan_layer_conv_sizes'][i]
             X = self.layers['g_layer_' + str(i)](X, output_size=new_size)
+
+            # Run activation functions
             if self.options['gan_layer_activation_func'] == 'relu':
                 X = f.relu(X)
             elif self.options['gan_layer_activation_func'] == 'tanh':
