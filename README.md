@@ -5,7 +5,7 @@ Generate images from captions using GANs. Runs on PyTorch.
 Karan Singhal, Samir Sen, Trevor Tsue
 
 ## Acknowledgements
-Borrowed code from
+Adapted parts of code from
 https://github.com/paarthneekhara/text-to-image
 
 Borrowed architecture from
