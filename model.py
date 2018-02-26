@@ -20,7 +20,7 @@ import collections
 	caption_vector_length : Caption Vector Length 2400
 	batch_size : Batch Size 64
 '''
-class GAN:
+class GAN(nn.Module):
     def __init__(self, options):
         self.options = options
         self.layers = collections.OrderedDict({})
