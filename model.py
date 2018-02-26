@@ -9,7 +9,17 @@ from torch.autograd import Variable
 import constants
 import collections
 
-
+'''
+	OPTIONS
+	z_dim : Noise dimension 100
+	t_dim : Text feature dimension 256
+	image_size : Image Dimension 64
+	gf_dim : Number of conv in the first layer generator 64
+	df_dim : Number of conv in the first layer discriminator 64
+	gfc_dim : Dimension of gen untis for for fully connected layer 1024
+	caption_vector_length : Caption Vector Length 2400
+	batch_size : Batch Size 64
+'''
 class GAN:
     def __init__(self, options):
         self.options = options
