@@ -2,7 +2,7 @@
 constants.py
 Holds all of the constants info of the project
 '''
-
+import torch.nn as nn
 
 '''
 data_loader.py constants
@@ -42,6 +42,7 @@ MAIN_STRIDE = 2
 # The batch size for training
 BATCH_SIZE = 64
 
+
 MAIN_MODEL_OPTIONS = {
     'caption_vec_len':4800,     # Dimensions for the embedded captions vector
     't_dim':256,                # Dimensions for the text vector inputted into the GAN
@@ -52,12 +53,12 @@ MAIN_MODEL_OPTIONS = {
     'g_channels':GAN_CHANNELS,          # The basis for the number of channels in the generator
     'd_channels':None,
     'gan_num_layers':4,                 # Number of layers in the GAN
-    'gan_layer_conv_sizes':[            # List of shape of each layer (number entries, height, width, num channels), starting at input layer
-                                [-1, int(IMAGE_SIZE/16), int(IMAGE_SIZE/16), GAN_CHANNELS * 8],
-                                [BATCH_SIZE, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8), GAN_CHANNELS * 4],
-                                [BATCH_SIZE, int(IMAGE_SIZE/4), int(IMAGE_SIZE/4), GAN_CHANNELS * 2],
-                                [BATCH_SIZE, int(IMAGE_SIZE/2), int(IMAGE_SIZE/2), GAN_CHANNELS * 1],
-                                [BATCH_SIZE, int(IMAGE_SIZE), int(IMAGE_SIZE), RGB_CHANNELS],
+    'gan_layer_conv_sizes':[            # List of shape of each layer (number entries, num channels, height, width), starting at input layer
+                                [-1, GAN_CHANNELS * 8, int(IMAGE_SIZE/16), int(IMAGE_SIZE/16)],
+                                [BATCH_SIZE, GAN_CHANNELS * 4, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)],
+                                [BATCH_SIZE, GAN_CHANNELS * 2, int(IMAGE_SIZE/4), int(IMAGE_SIZE/4)],
+                                [BATCH_SIZE, GAN_CHANNELS * 1, int(IMAGE_SIZE/2), int(IMAGE_SIZE/2)],
+                                [BATCH_SIZE, RGB_CHANNELS, int(IMAGE_SIZE), int(IMAGE_SIZE)],
                             ],
     'gan_layer_filter_sizes':[          # List of filter sizes for each layer of the GAN (starts with input, which we will ignore)
                                 0,
@@ -74,18 +75,18 @@ MAIN_MODEL_OPTIONS = {
                                 RGB_CHANNELS
                                 ],
     'gan_layer_padding':[          # Padding for each layer of the GAN (starts with input)
-                                [0],
-                                [0, MAIN_PADDING, MAIN_PADDING, 0],
-                                [0, MAIN_PADDING, MAIN_PADDING, 0],
-                                [0, MAIN_PADDING, MAIN_PADDING, 0],
-                                [0, MAIN_PADDING, MAIN_PADDING, 0],
+                                None,
+                                (MAIN_PADDING, MAIN_PADDING),
+                                (MAIN_PADDING, MAIN_PADDING),
+                                (MAIN_PADDING, MAIN_PADDING),
+                                (MAIN_PADDING, MAIN_PADDING),
                                 ],
     'gan_layer_stride':[          # Stride for each layer of the GAN (starts with input)
-                                [1],
-                                [1, MAIN_STRIDE, MAIN_STRIDE, 1],
-                                [1, MAIN_STRIDE, MAIN_STRIDE, 1],
-                                [1, MAIN_STRIDE, MAIN_STRIDE, 1],
-                                [1, MAIN_STRIDE, MAIN_STRIDE, 1],
+                                None,
+                                (MAIN_STRIDE, MAIN_STRIDE),
+                                (MAIN_STRIDE, MAIN_STRIDE),
+                                (MAIN_STRIDE, MAIN_STRIDE),
+                                (MAIN_STRIDE, MAIN_STRIDE),
                                 ],
     'gan_layer_activation_func':[       # List of the activations functions to be applied to each layer (empty string is no activation function)
                                     '',
