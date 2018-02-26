@@ -103,8 +103,6 @@ class GAN:
         print('Entire Model Created\n')
 
 
-
-
     # Takes in the instance, the text embeddings, and the noise vector
     # Generates the fake images
     def generate(self, text_embed, noise):

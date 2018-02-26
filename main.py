@@ -27,10 +27,13 @@ def main():
     # TODO: break text captions into multidimensional list
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
 
-    # TESTING GENATOR
-    # for k in text_caption_dict:
-    #     image_done = gan.generate(text_caption_dict[k], noise_vec).data.numpy()
-    #     break
+    # TESTING GENERATOR
+
+    generated = []               # Store images generated in each iteration
+    for k in text_caption_dict:
+        # image_done = gan.generate(text_caption_dict[k], noise_vec).data.numpy()
+        image_done = gan.generate(text_caption_dict[k], noise_vec)   # Returns tensor holding image
+        generated.append(image_done)
 
     # TESTING Discriminator
     for i in image_dict:
@@ -39,15 +42,14 @@ def main():
         image_dict[i] = np.expand_dims(image_dict[i], axis=0)
         text_des = text_caption_dict[i][0]
         text_des = np.expand_dims(text_des, 0)
-        # text_des = np.expand_dims(text_des, 0)
         output = gan.discriminate(Variable(torch.Tensor(image_dict[i])), Variable(torch.Tensor(text_des)))
 
     print output
     # # Swap axes of the image
-    # swap_image = np.swapaxes(image_done,1,2)
-    # swap_image = np.swapaxes(swap_image,2,3)
-    # plt.imshow(swap_image[0])
-    # plt.show()
+    swap_image = np.swapaxes(image_done,1,2)
+    swap_image = np.swapaxes(swap_image,2,3)
+    plt.imshow(swap_image[0])
+    plt.show()
 
 if __name__ == '__main__':
     main()
