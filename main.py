@@ -6,9 +6,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 import constants
-from gan_model import GAN
+from model import GAN
 import util
 import numpy as np
+import matplotlib.pyplot as plt
 
 def main():
     model_options = constants.MAIN_MODEL_OPTIONS
@@ -23,8 +24,16 @@ def main():
 
     # TODO: break text captions into multidimensional list
     for k in text_caption_dict:
-        gan.generate(text_caption_dict[k], noise_vec)
+        image_done = gan.generate(text_caption_dict[k], noise_vec).data.numpy()
         break
+
+    # Swap axes of the image
+    print "swapping"
+    swap_image = np.swapaxes(image_done,1,2)
+    swap_image = np.swapaxes(swap_image,2,3)
+    print swap_image.shape
+    plt.imshow(swap_image[0])
+    plt.show()
 
 if __name__ == '__main__':
     main()

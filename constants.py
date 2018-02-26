@@ -31,7 +31,7 @@ PRINT_MODEL_STATUS = True
 # Three channels for Red, Green, and Blue
 RGB_CHANNELS = 3
 # Number of pixels in one Dimension of an image
-IMAGE_SIZE = 64
+IMAGE_SIZE = 128
 # The basis for the number of channels in the generator (everything else is a multiple of this)
 GAN_CHANNELS = 64
 # The main padding for each layer in the GAN
@@ -55,10 +55,10 @@ MAIN_MODEL_OPTIONS = {
     'gan_num_layers':4,                 # Number of layers in the GAN
     'gan_layer_conv_sizes':[            # List of shape of each layer (number entries, num channels, height, width), starting at input layer
                                 [-1, GAN_CHANNELS * 8, int(IMAGE_SIZE/16), int(IMAGE_SIZE/16)],
-                                [BATCH_SIZE, GAN_CHANNELS * 4, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)],
-                                [BATCH_SIZE, GAN_CHANNELS * 2, int(IMAGE_SIZE/4), int(IMAGE_SIZE/4)],
-                                [BATCH_SIZE, GAN_CHANNELS * 1, int(IMAGE_SIZE/2), int(IMAGE_SIZE/2)],
-                                [BATCH_SIZE, RGB_CHANNELS, int(IMAGE_SIZE), int(IMAGE_SIZE)],
+                                [-1, GAN_CHANNELS * 4, int(IMAGE_SIZE/8), int(IMAGE_SIZE/8)],
+                                [-1, GAN_CHANNELS * 2, int(IMAGE_SIZE/4), int(IMAGE_SIZE/4)],
+                                [-1, GAN_CHANNELS * 1, int(IMAGE_SIZE/2), int(IMAGE_SIZE/2)],
+                                [-1, RGB_CHANNELS, int(IMAGE_SIZE), int(IMAGE_SIZE)],
                             ],
     'gan_layer_filter_sizes':[          # List of filter sizes for each layer of the GAN (starts with input, which we will ignore)
                                 0,
