@@ -42,10 +42,14 @@ def main():
         image_done = gan.generate(g_text_des, noise_vec)   # Returns tensor variable holding image
         generated.append(image_done)
 
+        g_loss =
+
         # Choose a different random caption of the same image and discriminate
         d_idx = np.random.randint(len(text_caption_dict[k]))
         d_text_des = text_caption_dict[k][d_idx]
         passed = gan.discriminate(image_done, Variable(torch.Tensor(np.expand_dims(d_text_des, 0))))
+
+
 
         #TODO Add loss and update
 

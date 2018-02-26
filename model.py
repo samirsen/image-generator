@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 from torch.autograd import Variable
+import torch.optim as optim
 import constants
 import collections
 
@@ -101,6 +102,18 @@ class GAN(nn.Module):
         self.layers['d_output_fc_layer'] = nn.Linear(fc_dim, 1)
 
         print('Entire Model Created\n')
+
+    def generator_loss(self, image_done):
+        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_fake_image_logits, tf.ones_like(disc_fake_image)))
+        return g_loss
+
+    def discriminator_loss(self, output):
+        d_loss1 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_real_image_logits, tf.ones_like(disc_real_image)))
+		d_loss2 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_wrong_image_logits, tf.zeros_like(disc_wrong_image)))
+		d_loss3 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_fake_image_logits, tf.zeros_like(disc_fake_image)))
+
+        d_loss = d_loss1 + d_loss2 + d_loss3
+        return d_loss
 
 
     # Takes in the instance, the text embeddings (batch_size x caption_vec_len), and the noise vector (batch_size x z_dim)
