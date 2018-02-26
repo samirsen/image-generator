@@ -103,7 +103,7 @@ class GAN:
         print('Entire Model Created\n')
 
 
-    # Takes in the instance, the text embeddings, and the noise vector
+    # Takes in the instance, the text embeddings (batch_size x caption_vec_len), and the noise vector (batch_size x z_dim)
     # Generates the fake images
     def generate(self, text_embed, noise):
         image_size = self.options['image_size']
@@ -116,6 +116,7 @@ class GAN:
         reduced_text_embed = self.layers['g_text_embed_fc_layer'](t_text_embed)
         reduced_text_embed = f.leaky_relu(reduced_text_embed, negative_slope=self.options['leak'])
 
+        print t_noise.shape, reduced_text_embed.shape
         # Concatenate the noise and the reduced text embedding
         text_concat = torch.cat([t_noise, reduced_text_embed], dim=1)
 
@@ -144,7 +145,8 @@ class GAN:
         # return X / 2. + 0.5
         return X
 
-    # Takes in the variable versions of the tensors image_vec and text_embed
+    # Takes in the variable versions of the tensors image_vec (BATCH_SIZE, CHANNELS, H, W) and text_embed (batch_size x caption_vec_len)
+    #
     def discriminate(self, t_image_vec, t_text_embed):
         image_size = self.options['image_size']
         X = t_image_vec
