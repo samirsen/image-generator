@@ -30,27 +30,26 @@ def main():
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
 
     # TESTING GENERATOR
-
-    generated = []               # Store images generated in each iteration
+    generated = []
     for k in text_caption_dict:
-        # image_done = gan.generate(text_caption_dict[k], noise_vec).data.numpy()
-        gen_idx = np.random.randint(len(text_caption_dict[k]))
-        g_text_des = text_caption_dict[k][gen_idx]
-        print text_caption_dict[k].shape
-        print np.expand_dims(g_text_des, axis=0).shape
+
+        # (BATCH, CHANNELS, H, W)  -- vectorized
+        # (1, CHANNELS, H, W)
+        g_idx = np.random.randint(len(text_caption_dict[k]))
+        g_text_des = text_caption_dict[k][g_idx]
         g_text_des = np.expand_dims(g_text_des, axis=0)
-        image_done = gan.generate(g_text_des, noise_vec)   # Returns tensor holding image
+
+        image_done = gan.generate(g_text_des, noise_vec)   # Returns tensor variable holding image
         generated.append(image_done)
 
-        # (BATCH, CHANNELS, H, W)
-        # (1, Channels, H, W)
+        # Choose a different random caption of the same image and discriminate
         d_idx = np.random.randint(len(text_caption_dict[k]))
         d_text_des = text_caption_dict[k][d_idx]
         passed = gan.discriminate(image_done, Variable(torch.Tensor(np.expand_dims(d_text_des, 0))))
 
-        print passed
-
         #TODO Add loss and update
+
+
 
     # TESTING Discriminator
     # PYTORCH HAS DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
@@ -64,11 +63,11 @@ def main():
     #     output = gan.discriminate(Variable(torch.Tensor(image_dict[i])), Variable(torch.Tensor(text_des)))
 
     # print output
-    # # Swap axes of the image
 
     # Show the generated image improves over time
     def print_images(generated):
         for img in generated:
+            image_done = img.data.numpy()
             swap_image = np.swapaxes(image_done,1,2)
             swap_image = np.swapaxes(swap_image,2,3)
             plt.imshow(swap_image[0])
