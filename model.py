@@ -6,12 +6,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 from torch.autograd import Variable
+import torch.optim as optim
 import constants
 import collections
 
-
-class GAN:
+'''
+	OPTIONS
+	z_dim : Noise dimension 100
+	t_dim : Text feature dimension 256
+	image_size : Image Dimension 64
+	gf_dim : Number of conv in the first layer generator 64
+	df_dim : Number of conv in the first layer discriminator 64
+	gfc_dim : Dimension of gen untis for for fully connected layer 1024
+	caption_vector_length : Caption Vector Length 2400
+	batch_size : Batch Size 64
+'''
+class GAN(nn.Module):
     def __init__(self, options):
+        super(Gan, self).__init__() 
+
         self.options = options
         self.layers = collections.OrderedDict({})
         self.batch_norm = collections.OrderedDict({})
@@ -92,10 +105,22 @@ class GAN:
 
         print('Entire Model Created\n')
 
+    def generator_loss(self, logits):
+        g_loss = f.binary_cross_entopy(logits, torch.ones_like(logits))
+        g_loss = torch.mean(g_loss)
+
+        return g_loss
+
+    def discriminator_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
+        d_loss1 = torch.mean(f.binary_cross_entopy(real_img_passed, tf.ones_like(real_img_passed)))
+		d_loss2 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(wrong_img_passed, tf.zeros_like(wrong_img_passed)))
+		d_loss3 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(fake_img_passed, tf.zeros_like(fake_img_passed)))
+
+        d_loss = d_loss1 + d_loss2 + d_loss3
+        return d_loss
 
 
-
-    # Takes in the instance, the text embeddings, and the noise vector
+    # Takes in the instance, the text embeddings (batch_size x caption_vec_len), and the noise vector (batch_size x z_dim)
     # Generates the fake images
     def generate(self, text_embed, noise):
         image_size = self.options['image_size']
@@ -108,6 +133,7 @@ class GAN:
         reduced_text_embed = self.layers['g_text_embed_fc_layer'](t_text_embed)
         reduced_text_embed = f.leaky_relu(reduced_text_embed, negative_slope=self.options['leak'])
 
+        print t_noise.shape, reduced_text_embed.shape
         # Concatenate the noise and the reduced text embedding
         text_concat = torch.cat([t_noise, reduced_text_embed], dim=1)
 
@@ -136,7 +162,8 @@ class GAN:
         # return X / 2. + 0.5
         return X
 
-    # Takes in the variable versions of the tensors image_vec and text_embed
+    # Takes in the variable versions of the tensors image_vec (BATCH_SIZE, CHANNELS, H, W) and text_embed (batch_size x caption_vec_len)
+    #
     def discriminate(self, t_image_vec, t_text_embed):
         image_size = self.options['image_size']
         X = t_image_vec

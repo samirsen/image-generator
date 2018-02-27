@@ -45,7 +45,8 @@ MAIN_STRIDE = 2
 D_EMBED_EXPAND = 8
 
 # The batch size for training
-BATCH_SIZE = 64
+# BATCH_SIZE = 64
+BATCH_SIZE = 1
 
 
 MAIN_MODEL_OPTIONS = {
@@ -55,7 +56,7 @@ MAIN_MODEL_OPTIONS = {
     'batch_size':BATCH_SIZE,
     'image_size':IMAGE_SIZE,
     'g_channels':G_CHANNELS,          # The basis for the number of channels in the generator
-    'd_channels':None,
+    'd_channels':D_CHANNELS,
     'leak':0.2,                         # Leak for Leaky ReLU
     'bn_momentum':0.9,                  # Batch norm momentum
     'bn_eps':1e-05,                     # Batch norm epsilon

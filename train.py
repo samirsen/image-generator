@@ -94,7 +94,7 @@ def main():
             g_optimzer.step()
 
             d_loss.backward()
-            d_optimizer.step() 
+            d_optimizer.step()
 
             generated.append(gen_image)
 
