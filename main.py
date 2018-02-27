@@ -73,6 +73,7 @@ def main():
     gan = GAN(model_options)
     g_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
     d_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
+    
     # TODO: break text captions into multidimensional list
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
 
@@ -94,7 +95,7 @@ def main():
             g_optimzer.step()
 
             d_loss.backward()
-            d_optimizer.step() 
+            d_optimizer.step()
 
             generated.append(gen_image)
 
