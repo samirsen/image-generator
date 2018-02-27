@@ -156,7 +156,7 @@ class GAN:
         red_text_embed = self.layers['d_red_embed_fc_layer'](t_text_embed)
         red_text_embed = f.leaky_relu(red_text_embed, negative_slope=self.options['leak'])
 
-        # Expand dimensions
+        # Expand dimensions (adding them with unsqueeze)
         red_text_embed = red_text_embed.unsqueeze(1)
         red_text_embed = red_text_embed.unsqueeze(2)
         repeat_embed = red_text_embed.repeat(1, constants.D_EMBED_EXPAND, constants.D_EMBED_EXPAND, 1)
@@ -170,6 +170,7 @@ class GAN:
         X_concat = f.leaky_relu(X_concat, negative_slope=self.options['leak'])
 
         # The fully connected layer of both the image convolution and the text embeddings
+        # Flattening the X_concat with the view function
         X_fc = X_concat.view(X_concat.shape[0], -1)
         X_fc = self.layers['d_output_fc_layer'](X_fc)
 
