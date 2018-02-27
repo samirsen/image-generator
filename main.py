@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from itertools import izip_longest
+import scipy.misc
 
 np.random.seed(42)
 
@@ -87,9 +88,8 @@ def main():
     d_optimizer = optim.Adam(gan.d_model.parameters(), lr=0.0002, betas=(0.5, 0.25))
 
     # Loop over dataset N times
-    for epoch in range(1):
-
-        generated = []
+    for epoch in range(constants.NUM_EPOCHS):
+        print "Epoch: ", epoch
         for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
             batch_keys = [x for x in batch_iter if x is not None]
             # (BATCH, CHANNELS, H, W)  -- vectorized
@@ -106,7 +106,17 @@ def main():
             d_loss.backward(retain_graph=True)
             d_optimizer.step()
 
-            generated.append(gen_image)
+        print 'G Loss: ', g_loss.data[0]
+        print 'D Loss: ', d_loss.data[0]
+
+        # Save images
+        currImage = gen_image[0].data.numpy()
+        currImage = np.swapaxes(currImage, 0, 1)
+        currImage = np.swapaxes(currImage, 1,2)
+        scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
+        if epoch % 10 == 0:
+            torch.save(gan.state_doct(), constants.SAVE_PATH + 'epoch' + str(epoch))
+
 
 
     # TESTING Discriminator

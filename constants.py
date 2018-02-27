@@ -25,6 +25,10 @@ VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 Model Constants
 main.py, gan_model.py
 '''
+NUM_EPOCHS = 100
+
+# SAVE PATH FOR MODLE OPTIONS
+SAVE_PATH = 'Data/weights/'
 # If true, prints status of creating model
 PRINT_MODEL_STATUS = True
 
@@ -46,7 +50,7 @@ D_EMBED_EXPAND = 8
 
 # The batch size for training
 # BATCH_SIZE = 64
-BATCH_SIZE = 2
+BATCH_SIZE = 8
 
 
 MAIN_MODEL_OPTIONS = {
