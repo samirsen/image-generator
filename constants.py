@@ -46,7 +46,7 @@ D_EMBED_EXPAND = 8
 
 # The batch size for training
 # BATCH_SIZE = 64
-BATCH_SIZE = 1
+BATCH_SIZE = 2
 
 
 MAIN_MODEL_OPTIONS = {
