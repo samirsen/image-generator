@@ -119,10 +119,10 @@ def main():
         # Save images
         currImage = gen_image[0].data.numpy()
         currImage = np.swapaxes(currImage, 0, 1)
-        currImage = np.swapaxes(currImage, 1,2)
+        currImage = np.swapaxes(currImage, 1, 2)
         scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
-        if epoch % 10 == 0:
-            torch.save(gan.state_doct(), constants.SAVE_PATH + 'epoch' + str(epoch))
+        if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
+            torch.save(gan.state_dict(), constants.SAVE_PATH + 'epoch' + str(epoch))
 
 
 
