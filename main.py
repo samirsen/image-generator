@@ -84,8 +84,15 @@ def main():
     noise_vec = np.random.randn(constants.BATCH_SIZE, model_options['z_dim'])
 
     gan = GAN(model_options)
+
+    # g_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
+    # d_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
+
+    # TODO: break text captions into multidimensional list
+    # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
     g_optimizer = optim.Adam(gan.g_model.parameters(), lr=0.0002, betas=(0.5, 0.25))
     d_optimizer = optim.Adam(gan.d_model.parameters(), lr=0.0002, betas=(0.5, 0.25))
+
 
     # Loop over dataset N times
     for epoch in range(constants.NUM_EPOCHS):
@@ -103,6 +110,7 @@ def main():
             g_loss.backward(retain_graph=True)
             g_optimizer.step()
 
+            d_loss.backward()
             d_loss.backward(retain_graph=True)
             d_optimizer.step()
 
