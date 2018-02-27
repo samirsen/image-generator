@@ -23,6 +23,8 @@ import collections
 '''
 class GAN(nn.Module):
     def __init__(self, options):
+        super(Gan, self).__init__() 
+
         self.options = options
         self.layers = collections.OrderedDict({})
         self.batch_norm = collections.OrderedDict({})
@@ -103,14 +105,16 @@ class GAN(nn.Module):
 
         print('Entire Model Created\n')
 
-    def generator_loss(self, image_done):
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_fake_image_logits, tf.ones_like(disc_fake_image)))
+    def generator_loss(self, logits):
+        g_loss = f.binary_cross_entopy(logits, torch.ones_like(logits))
+        g_loss = torch.mean(g_loss)
+
         return g_loss
 
-    def discriminator_loss(self, output):
-        d_loss1 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_real_image_logits, tf.ones_like(disc_real_image)))
-		d_loss2 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_wrong_image_logits, tf.zeros_like(disc_wrong_image)))
-		d_loss3 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(disc_fake_image_logits, tf.zeros_like(disc_fake_image)))
+    def discriminator_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
+        d_loss1 = torch.mean(f.binary_cross_entopy(real_img_passed, tf.ones_like(real_img_passed)))
+		d_loss2 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(wrong_img_passed, tf.zeros_like(wrong_img_passed)))
+		d_loss3 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(fake_img_passed, tf.zeros_like(fake_img_passed)))
 
         d_loss = d_loss1 + d_loss2 + d_loss3
         return d_loss

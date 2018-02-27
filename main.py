@@ -4,6 +4,7 @@ main.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
+import torch.optim as optim
 import constants
 from model import GAN
 import util
@@ -70,12 +71,13 @@ def main():
     noise_vec = np.random.randn(constants.BATCH_SIZE, model_options['z_dim'])
 
     gan = GAN(model_options)
-
+    g_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
+    d_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
     # TODO: break text captions into multidimensional list
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
 
-    # TESTING GENERATOR
-    for epoch in range(10):
+    # Loop over dataset N times
+    for epoch in range(1):
 
         generated = []
         for k in text_caption_dict:
@@ -85,16 +87,21 @@ def main():
             real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, k, gan)
 
             #TODO Add loss and update
-            g_loss = gan.generator_loss()
-            
+            g_loss = gan.generator_loss(fake_img_passed)
+            d_loss = gan.discriminator_loss(real_img_passed, wrong_img_passed, fake_img_passed)
 
+            g_loss.backward()
+            g_optimzer.step()
+
+            d_loss.backward()
+            d_optimizer.step() 
 
             generated.append(gen_image)
 
 
     # TESTING Discriminator
     # PYTORCH HAS DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
-    # NEED TO SWITHC TO (BATCHSIZE, H, W, CHANNELS)
+    # NEED TO SWITCH FROM (BATCHSIZE, H, W, CHANNELS)
     # for i in image_dict:
     #     image_dict[i] = np.swapaxes(image_dict[i],1,2)
     #     image_dict[i] = np.swapaxes(image_dict[i],0,1)
