@@ -9,6 +9,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 import constants
 import collections
+import functools
 
 '''
 	OPTIONS
@@ -23,17 +24,18 @@ import collections
 '''
 class GAN(nn.Module):
     def __init__(self, options):
-        super(Gan, self).__init__() 
+        super(GAN, self).__init__()
 
         self.options = options
-        self.layers = collections.OrderedDict({})
+        self.g_layers = collections.OrderedDict({})
+        self.d_layers = collections.OrderedDict({})
         self.batch_norm = collections.OrderedDict({})
 
         if constants.PRINT_MODEL_STATUS: print('Creating Model...\n')
 
         # Add text input layers to the layers dict
-        self.layers['g_text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
-        torch.nn.init.xavier_uniform(self.layers['g_text_embed_fc_layer'].weight)
+        self.g_layers['g_text_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+        torch.nn.init.xavier_uniform(self.g_layers['g_text_embed_fc_layer'].weight)
         if constants.PRINT_MODEL_STATUS: print('Text Embedded Fully Connected Layer Created')
 
         # Calculate the length of the input of the GAN
@@ -41,8 +43,8 @@ class GAN(nn.Module):
         for i in self.options['g_layer_conv_sizes'][0][1:]:
             conv_vec_length *= i
 
-        self.layers['g_text_noise_fc_layer'] = nn.Linear(self.options['t_dim'] + self.options['z_dim'], conv_vec_length)
-        torch.nn.init.xavier_uniform(self.layers['g_text_noise_fc_layer'].weight)
+        self.g_layers['g_text_noise_fc_layer'] = nn.Linear(self.options['t_dim'] + self.options['z_dim'], conv_vec_length)
+        torch.nn.init.xavier_uniform(self.g_layers['g_text_noise_fc_layer'].weight)
         if constants.PRINT_MODEL_STATUS: print('Text Noise Fully Connected Layer Created')
 
         # Add hidden GAN generator layers to the layers dict
@@ -57,12 +59,12 @@ class GAN(nn.Module):
             self.batch_norm['g_bn_layer_' + str(i)] = nn.BatchNorm2d(input_channels, self.options['bn_eps'], self.options['bn_momentum'])
 
             # Create conv transpose generator layer
-            self.layers['g_layer_' + str(i)] = nn.ConvTranspose2d(input_channels, output_channels,      \
+            self.g_layers['g_layer_' + str(i)] = nn.ConvTranspose2d(input_channels, output_channels,      \
                                                                     kernel_size=layer_filter_size,      \
                                                                     stride=layer_stride,                \
                                                                     padding=layer_padding)
 
-            torch.nn.init.xavier_uniform(self.layers['g_layer_' + str(i)].weight)
+            torch.nn.init.xavier_uniform(self.g_layers['g_layer_' + str(i)].weight)
             if constants.PRINT_MODEL_STATUS: print('Generator Layer ' + str(i) + ' Created')
 
         # Added discriminator layers to layers dict
@@ -77,44 +79,47 @@ class GAN(nn.Module):
             self.batch_norm['d_bn_layer_' + str(i)] = nn.BatchNorm2d(input_channels, self.options['bn_eps'], self.options['bn_momentum'])
 
             # Create conv layer
-            self.layers['d_layer_' + str(i)] = nn.Conv2d(input_channels, output_channels,   \
+            self.d_layers['d_layer_' + str(i)] = nn.Conv2d(input_channels, output_channels,   \
                                                             kernel_size=layer_filter_size,  \
                                                             stride=layer_stride,            \
                                                             padding=layer_padding)
-            torch.nn.init.xavier_uniform(self.layers['d_layer_' + str(i)].weight)
+            torch.nn.init.xavier_uniform(self.d_layers['d_layer_' + str(i)].weight)
             if constants.PRINT_MODEL_STATUS: print('Discriminator Layer ' + str(i) + ' Created')
 
         # The discriminator text embedding fully connected layer for the reduced text embeddings
-        self.layers['d_red_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
-        torch.nn.init.xavier_uniform(self.layers['d_red_embed_fc_layer'].weight)
+        self.d_layers['d_red_embed_fc_layer'] = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+        torch.nn.init.xavier_uniform(self.d_layers['d_red_embed_fc_layer'].weight)
 
         # The conv layer of the concatenated images outputs from convolutional part of discriminator and the text embeddings
         cat_input_channels = self.options['d_layer_num_channels'][self.options['d_num_layers']] + self.options['t_dim']
         cat_output_channels = self.options['d_layer_num_channels'][self.options['d_num_layers']]
-        self.layers['d_image_embed_conv_layer'] = nn.Conv2d(cat_input_channels, cat_output_channels,    \
+        self.d_layers['d_image_embed_conv_layer'] = nn.Conv2d(cat_input_channels, cat_output_channels,    \
                                                         kernel_size=(1,1),                      \
                                                         stride=(1,1),                           \
                                                         padding=0)
-        torch.nn.init.xavier_uniform(self.layers['d_image_embed_conv_layer'].weight)
+        torch.nn.init.xavier_uniform(self.d_layers['d_image_embed_conv_layer'].weight)
 
         # The fully connected layer of the output
         fc_dim = 1
         for i in self.options['d_layer_conv_sizes'][self.options['d_num_layers']][1:]:
             fc_dim *= i
-        self.layers['d_output_fc_layer'] = nn.Linear(fc_dim, 1)
+        self.d_layers['d_output_fc_layer'] = nn.Linear(fc_dim, 1)
 
+        # CONVERT LAYERS TO ACTUAL PARAMETERS IN THE MODEL
+        self.g_model = nn.Sequential(self.g_layers)
+        self.d_model = nn.Sequential(self.d_layers)
         print('Entire Model Created\n')
 
     def generator_loss(self, logits):
-        g_loss = f.binary_cross_entopy(logits, torch.ones_like(logits))
+        g_loss = f.binary_cross_entropy(logits, torch.ones_like(logits))
         g_loss = torch.mean(g_loss)
 
         return g_loss
 
     def discriminator_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
-        d_loss1 = torch.mean(f.binary_cross_entopy(real_img_passed, tf.ones_like(real_img_passed)))
-		d_loss2 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(wrong_img_passed, tf.zeros_like(wrong_img_passed)))
-		d_loss3 = torch.mean(tf.nn.sigmoid_cross_entropy_with_logits(fake_img_passed, tf.zeros_like(fake_img_passed)))
+        d_loss1 = torch.mean(f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed)))
+        d_loss2 = torch.mean(f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed)))
+        d_loss3 = torch.mean(f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed)))
 
         d_loss = d_loss1 + d_loss2 + d_loss3
         return d_loss
@@ -130,15 +135,14 @@ class GAN(nn.Module):
         t_noise = Variable(torch.Tensor(noise))               # dim: batch_size x z_dim
 
         # Make text embeddings
-        reduced_text_embed = self.layers['g_text_embed_fc_layer'](t_text_embed)
+        reduced_text_embed = self.g_layers['g_text_embed_fc_layer'](t_text_embed)
         reduced_text_embed = f.leaky_relu(reduced_text_embed, negative_slope=self.options['leak'])
 
-        print t_noise.shape, reduced_text_embed.shape
         # Concatenate the noise and the reduced text embedding
         text_concat = torch.cat([t_noise, reduced_text_embed], dim=1)
 
         # Turn the noise and text concatenated tensor into a tensor that will be used for GAN input
-        text_noise = self.layers['g_text_noise_fc_layer'](text_concat)
+        text_noise = self.g_layers['g_text_noise_fc_layer'](text_concat)
 
         # Create the text input tensors
         X = text_noise.view(self.options['g_layer_conv_sizes'][0])
@@ -151,7 +155,7 @@ class GAN(nn.Module):
 
             # Run conv transpose layer
             new_size = self.options['g_layer_conv_sizes'][i]
-            X = self.layers['g_layer_' + str(i)](X, output_size=new_size)
+            X = self.g_layers['g_layer_' + str(i)](X, output_size=new_size)
 
             # Run activation functions
             if self.options['g_layer_activation_func'] == 'relu':
@@ -174,16 +178,16 @@ class GAN(nn.Module):
             X = self.batch_norm['d_bn_layer_' + str(i)](X)
 
             # Run conv layer
-            X = self.layers['d_layer_' + str(i)](X)
+            X = self.d_layers['d_layer_' + str(i)](X)
 
             if self.options['d_layer_activation_func'][i] == 'lrelu':
                 X = f.relu(X)
 
         # Add text embedding
-        red_text_embed = self.layers['d_red_embed_fc_layer'](t_text_embed)
+        red_text_embed = self.d_layers['d_red_embed_fc_layer'](t_text_embed)
         red_text_embed = f.leaky_relu(red_text_embed, negative_slope=self.options['leak'])
 
-        # Expand dimensions
+        # Expand dimensions (adding them with unsqueeze)
         red_text_embed = red_text_embed.unsqueeze(1)
         red_text_embed = red_text_embed.unsqueeze(2)
         repeat_embed = red_text_embed.repeat(1, constants.D_EMBED_EXPAND, constants.D_EMBED_EXPAND, 1)
@@ -193,11 +197,12 @@ class GAN(nn.Module):
 
         # Concatenate the output of the image convolution and the text embeddings
         X_concat = torch.cat([X, repeat_embed], dim=1)
-        X_concat = self.layers['d_image_embed_conv_layer'](X_concat)
+        X_concat = self.d_layers['d_image_embed_conv_layer'](X_concat)
         X_concat = f.leaky_relu(X_concat, negative_slope=self.options['leak'])
 
         # The fully connected layer of both the image convolution and the text embeddings
+        # Flattening the X_concat with the view function
         X_fc = X_concat.view(X_concat.shape[0], -1)
-        X_fc = self.layers['d_output_fc_layer'](X_fc)
+        X_fc = self.d_layers['d_output_fc_layer'](X_fc)
 
         return f.sigmoid(X_fc)
