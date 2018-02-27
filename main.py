@@ -110,7 +110,6 @@ def main():
             g_loss.backward(retain_graph=True)
             g_optimizer.step()
 
-            d_loss.backward()
             d_loss.backward(retain_graph=True)
             d_optimizer.step()
 
