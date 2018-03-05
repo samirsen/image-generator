@@ -82,8 +82,8 @@ def main():
     # Load the caption text vectors
     text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
 
-    # image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
-    # noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
+    image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
+    noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
 
     generator = Generator(model_options)
     discriminator = Discriminator(model_options)
