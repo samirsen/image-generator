@@ -82,16 +82,15 @@ class Generator(nn.Module):
 		# Add dimension 2 and 3 to make projected embed into 4 dimension
 		# batch_size x num_channels x height (1) x width (1)
 		projected_embed = projected_embed.unsqueeze(2).unsqueeze(3)
-
 		latent_vec = torch.cat([projected_embed, noise], 1)
 		output = self.generator(latent_vec)
 
 		return output
 
 	# Generator Loss
+	# L_G = log(y_f)
 	def loss(self, logits):
 	    g_loss = f.binary_cross_entropy(logits, torch.ones_like(logits))
-	    g_loss = torch.mean(g_loss)
 
 	    return g_loss
 
@@ -166,10 +165,11 @@ class Discriminator(nn.Module):
 		return output
 
 	# Discriminator Loss
+	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
 	def loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
-	    d_loss1 = torch.mean(f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed)))
-	    d_loss2 = torch.mean(f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed)))
-	    d_loss3 = torch.mean(f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed)))
-
+	    d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed))
+	    d_loss2 = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
+	    d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
 	    d_loss = d_loss1 + d_loss2 + d_loss3
+
 	    return d_loss
