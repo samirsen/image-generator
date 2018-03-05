@@ -6,13 +6,14 @@ import torch.nn as nn
 import torch.nn.functional as f
 import torch.optim as optim
 import constants
-from model import GAN
+from model import Generator, Discriminator
 import util
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from itertools import izip_longest
 import scipy.misc
+import matplotlib.pyplot as plt
 
 np.random.seed(42)
 
@@ -80,51 +81,71 @@ def main():
     # Load the caption text vectors
     text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
 
-    image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
-    noise_vec = np.random.randn(constants.BATCH_SIZE, model_options['z_dim'])
+    # image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
+    # noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
 
-    gan = GAN(model_options)
-
-    # g_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
-    # d_optimizer = optim.Adam(gan.parameters(), lr=0.0002, betas=(0.5, 0.25))
+    generator = Generator(model_options)
+    discriminator = Discriminator(model_options)
 
     # TODO: break text captions into multidimensional list
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
-    g_optimizer = optim.Adam(gan.g_model.parameters(), lr=0.0002, betas=(0.5, 0.25))
-    d_optimizer = optim.Adam(gan.d_model.parameters(), lr=0.0002, betas=(0.5, 0.25))
+    g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
 
+
+
+    # TODO: ADD L1/L2 Regularizaiton
+    # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
+    # TODO: OPTIMIZE FOR GPU (CUDA)
+    # TODO: ADD PARALLELIZATION
 
     # Loop over dataset N times
-    for epoch in range(constants.NUM_EPOCHS):
-        print "Epoch: ", epoch
-        for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
-            batch_keys = [x for x in batch_iter if x is not None]
-            # (BATCH, CHANNELS, H, W)  -- vectorized
-            # (1, CHANNELS, H, W)
-            gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, gan)
-            real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, gan)
+    # for epoch in range(constants.NUM_EPOCHS):
+    #     print "Epoch: ", epoch
+    #     for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
+    #         batch_keys = [x for x in batch_iter if x is not None]
+    #         # (BATCH, CHANNELS, H, W)  -- vectorized
+    #         # (1, CHANNELS, H, W)
+    #         gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, gan)
+    #         real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, gan)
+    #
+    #         g_loss = gan.generator_loss(fake_img_passed)
+    #         d_loss = gan.discriminator_loss(real_img_passed, wrong_img_passed, fake_img_passed)
+    #
+    #         g_loss.backward(retain_graph=True)
+    #         g_optimizer.step()
+    #
+    #         d_loss.backward(retain_graph=True)
+    #         d_optimizer.step()
+    #
+    #     print 'G Loss: ', g_loss.data[0]
+    #     print 'D Loss: ', d_loss.data[0]
+    #
+    #     # Save images
+    #     currImage = gen_image[0].data.numpy()
+    #     currImage = np.swapaxes(currImage, 0, 1)
+    #     currImage = np.swapaxes(currImage, 1, 2)
+    #     scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
+    #     if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
+    #         torch.save(gan.state_dict(), constants.SAVE_PATH + 'epoch' + str(epoch))
 
-            g_loss = gan.generator_loss(fake_img_passed)
-            d_loss = gan.discriminator_loss(real_img_passed, wrong_img_passed, fake_img_passed)
-
-            g_loss.backward(retain_graph=True)
-            g_optimizer.step()
-
-            d_loss.backward(retain_graph=True)
-            d_optimizer.step()
-
-        print 'G Loss: ', g_loss.data[0]
-        print 'D Loss: ', d_loss.data[0]
-
-        # Save images
-        currImage = gen_image[0].data.numpy()
-        currImage = np.swapaxes(currImage, 0, 1)
-        currImage = np.swapaxes(currImage, 1, 2)
-        scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
-        if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
-            torch.save(gan.state_dict(), constants.SAVE_PATH + 'epoch' + str(epoch))
 
 
+    # FOR TESTING
+    # for k in text_caption_dict:
+    #     noise_vec = torch.randn(5, model_options['z_dim'], 1, 1)
+    #     image = generator.forward(Variable(torch.Tensor(text_caption_dict[k])), Variable(torch.Tensor(noise_vec)))
+    #     output = discriminator.forward(image, Variable(torch.Tensor(text_caption_dict[k])))
+    #     print "DISCRIM OUTPUT", output
+    #     break
+    # print image.shape
+    # swap_image = image.data.numpy()[0]
+    # swap_image = np.swapaxes(swap_image,0,1)
+    # swap_image = np.swapaxes(swap_image,1,2)
+    # print swap_image.shape
+    # plt.imshow(swap_image)
+    # plt.show()
+    # END TESTING
 
     # TESTING Discriminator
     # PYTORCH HAS DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
