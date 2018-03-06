@@ -54,19 +54,13 @@ def choose_wrong_image(image_dict, batch_keys):
 
     return wrong_image
 
-def discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, discriminator):
+# Finds the true image for the given batch data
+def choose_true_image(image_dict, batch_keys):
     true_img = np.array([image_dict[k] for k in batch_keys])
     true_img = np.swapaxes(true_img, 2, 3)
     true_img = np.swapaxes(true_img, 1, 2)
-    true_caption = get_text_description(text_caption_dict, batch_keys)
 
-    wrong_img = choose_wrong_image(image_dict, batch_keys)
-
-    real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
-    wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
-    fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
-
-    return real_img_passed, wrong_img_passed, fake_img_passed
+    return true_img
 
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
@@ -116,22 +110,32 @@ def main():
             batch_keys = [x for x in batch_iter if x is not None]
 
             # Zero out gradient
-            generator.zero_grad()
             discriminator.zero_grad()
 
-            # Run through generator and discriminator
+            # Get batch data
+            true_caption = get_text_description(text_caption_dict, batch_keys)
+            true_img = choose_true_image(image_dict, batch_keys)
+            wrong_img = choose_wrong_image(image_dict, batch_keys)
+
+            # Run through generator
             gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, generator)
-            real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, discriminator)
 
-            # Calculate loss
-            g_loss = generator.loss(fake_img_passed)
+            # Run through discriminator
+            real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
+            wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
+            fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+
+            # Train discriminator
             d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-
-            # Update optimizer
-            g_loss.backward(retain_graph=True)
-            g_optimizer.step()
             d_loss.backward(retain_graph=True)
             d_optimizer.step()
+
+            # Train generator
+            generator.zero_grad()
+            new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            g_loss = generator.loss(new_fake_img_passed)
+            g_loss.backward(retain_graph=True)
+            g_optimizer.step()
 
         print 'G Loss: ', g_loss.data[0]
         print 'D Loss: ', d_loss.data[0]
