@@ -54,7 +54,7 @@ def choose_wrong_image(image_dict, batch_keys):
 
     return wrong_image
 
-def discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, gan):
+def discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, discriminator):
     true_img = np.array([image_dict[k] for k in batch_keys])
     true_img = np.swapaxes(true_img, 2, 3)
     true_img = np.swapaxes(true_img, 1, 2)
@@ -62,16 +62,17 @@ def discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, gan):
 
     wrong_img = choose_wrong_image(image_dict, batch_keys)
 
-    real_img_passed = gan.discriminate(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
-    wrong_img_passed = gan.discriminate(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
-    fake_img_passed = gan.discriminate(gen_image, Variable(torch.Tensor(true_caption)))
+    real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
+    wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
+    fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
 
     return real_img_passed, wrong_img_passed, fake_img_passed
 
 
-def generate_step(text_caption_dict, noise_vec, batch_keys, gan):
+def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
-    gen_image = gan.generate(g_text_des, noise_vec)   # Returns tensor variable holding image
+    g_text_des = Variable(torch.Tensor(g_text_des))
+    gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
 
     return gen_image
 
@@ -87,6 +88,10 @@ def main():
 
     generator = Generator(model_options)
     discriminator = Discriminator(model_options)
+
+    # Initialize weights
+    generator.apply(util.weights_init)
+    discriminator.apply(util.weights_init)
 
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
@@ -109,18 +114,23 @@ def main():
         print ("Epoch: %d" %(epoch))
         for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
             batch_keys = [x for x in batch_iter if x is not None]
-            # (BATCH, CHANNELS, H, W)  -- vectorized
-            # (1, CHANNELS, H, W)
-            gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, gan)
-            real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, gan)
 
-            g_loss = gan.generator_loss(fake_img_passed)
-            d_loss = gan.discriminator_loss(real_img_passed, wrong_img_passed, fake_img_passed)
+            # Zero out gradient
+            generator.zero_grad()
+            discriminator.zero_grad()
 
-            g_loss.backward()
+            # Run through generator and discriminator
+            gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, generator)
+            real_img_passed, wrong_img_passed, fake_img_passed = discrimate_step(gen_image, text_caption_dict, image_dict, batch_keys, discriminator)
+
+            # Calculate loss
+            g_loss = generator.loss(fake_img_passed)
+            d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
+
+            # Update optimizer
+            g_loss.backward(retain_graph=True)
             g_optimizer.step()
-
-            d_loss.backward()
+            d_loss.backward(retain_graph=True)
             d_optimizer.step()
 
         print 'G Loss: ', g_loss.data[0]
@@ -131,8 +141,10 @@ def main():
         currImage = np.swapaxes(currImage, 0, 1)
         currImage = np.swapaxes(currImage, 1, 2)
         scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
+        # Save model
         if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
-            torch.save(gan.state_dict(), constants.SAVE_PATH + 'epoch' + str(epoch))
+            torch.save(generator.state_dict(), constants.SAVE_PATH + 'g_epoch' + str(epoch))
+            torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'd_epoch' + str(epoch))
 
 
 

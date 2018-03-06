@@ -90,9 +90,9 @@ class Generator(nn.Module):
 	# Generator Loss
 	# L_G = log(y_f)
 	def loss(self, logits):
-	    g_loss = f.binary_cross_entropy(logits, torch.ones_like(logits))
+		g_loss = f.binary_cross_entropy(logits, torch.ones_like(logits))
 
-	    return g_loss
+		return g_loss
 
 
 
@@ -167,9 +167,10 @@ class Discriminator(nn.Module):
 	# Discriminator Loss
 	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
 	def loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
-	    d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed))
-	    d_loss2 = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
-	    d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
-	    d_loss = d_loss1 + d_loss2 + d_loss3
+		d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed))
+		d_loss2 = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
+		d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
 
-	    return d_loss
+		d_loss = d_loss1 + d_loss2 + d_loss3
+
+		return d_loss

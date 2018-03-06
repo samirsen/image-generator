@@ -30,3 +30,14 @@ def load_images(directory, image_file_names):
         image_dict[name] = resized_image
 
     return image_dict
+
+
+# custom weights initialization called on netG and netD
+# from https://github.com/pytorch/examples/blob/master/dcgan/main.py
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        m.weight.data.normal_(0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        m.weight.data.normal_(1.0, 0.02)
+        m.bias.data.fill_(0)
