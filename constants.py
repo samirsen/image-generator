@@ -36,6 +36,8 @@ PRINT_MODEL_STATUS = True
 NUM_EPOCHS = 1000
 # The batch size for training
 BATCH_SIZE = 128
+# How often to save losses
+LOSS_SAVE_IDX = 1
 # Learning rate for the Adam Optimizer
 LR = 0.0002
 # Beta options for the Adam Optimizer

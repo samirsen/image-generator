@@ -105,6 +105,7 @@ def main():
     discriminator.apply(util.weights_init)
 
     new_epoch = 0
+    losses = {"generator": [], "discriminator": []}
     if args.resume:
         print("Resuming from epoch " + args.resume)
         new_epoch = int(args.resume) + 1
@@ -112,11 +113,13 @@ def main():
         generator.load_state_dict(gen_state)
         dis_state = torch.load(constants.SAVE_PATH + 'd_epoch' + str(args.resume))
         discriminator.load_state_dict(dis_state)
+        losses = torch.load(constants.SAVE_PATH + 'losses')
 
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
     print("Added optimizers")
 
+    
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
@@ -133,7 +136,7 @@ def main():
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
-        for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
+        for i, batch_iter in enumerate(grouper(text_caption_dict.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
             if len(batch_keys) != noise_vec.size()[0]:
                 noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
@@ -175,8 +178,15 @@ def main():
             g_loss.backward(retain_graph=True)
             g_optimizer.step()
 
+            if i % constants.LOSS_SAVE_IDX == 0:
+                losses['generator'].append(g_loss.data[0])
+                losses['discriminator'].append(d_loss.data[0])
+
         print 'G Loss: ', g_loss.data[0]
         print 'D Loss: ', d_loss.data[0]
+
+        # Save losses
+        torch.save(losses, constants.SAVE_PATH + 'losses')
 
         # Save images
         currImage = gen_image[0].data.cpu()
