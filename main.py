@@ -99,6 +99,8 @@ def main():
     # TODO: OPTIMIZE FOR GPU (CUDA)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
+    # TODO: TRAIN/VAL/TEST SETS
+    # TODO: INCREASE NUM EPOCHS (200?)
 
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
