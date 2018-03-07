@@ -14,7 +14,7 @@ SMALL_DATASET = 'flowers/smalljpg/'
 
 # Choose which directory holds the images you want for the flowers
 # TODO: UPDATE THIS ONE FOR WHICH DATA SET YOU WANT
-DIRECTORY_PATH = SMALL_DATASET
+DIRECTORY_PATH = ENTIRE_DATASET
 
 # The name of the output file that the word vectors will be saved as.
 # This file name should end with '.hdf5'
@@ -33,9 +33,9 @@ PRINT_MODEL_STATUS = True
 
 # TRAINING OPTIONS
 # Number of epochs to run the training
-NUM_EPOCHS = 100
+NUM_EPOCHS = 1000
 # The batch size for training
-BATCH_SIZE = 8
+BATCH_SIZE = 128
 # Learning rate for the Adam Optimizer
 LR = 0.0002
 # Beta options for the Adam Optimizer
