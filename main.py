@@ -15,8 +15,13 @@ import matplotlib.pyplot as plt
 from itertools import izip_longest
 import scipy.misc
 import matplotlib.pyplot as plt
+import argparse
 
 np.random.seed(42)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--resume')
+args = parser.parse_args()
 
 # From https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
 # Iterates over an array in chunks
@@ -66,12 +71,15 @@ def choose_true_image(image_dict, batch_keys):
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
     g_text_des = Variable(torch.Tensor(g_text_des))
+    if torch.cuda.is_available():
+        g_text_des = g_text_des.cuda()
     gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
 
     return gen_image
 
 
 def main():
+    print("Starting..")
     model_options = constants.MAIN_MODEL_OPTIONS
 
     # Load the caption text vectors
@@ -79,17 +87,35 @@ def main():
 
     image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
     noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
-
+    
+    
     generator = Generator(model_options)
     discriminator = Discriminator(model_options)
 
+    
+
+    if torch.cuda.is_available():
+        print("CUDA is available")
+        generator = generator.cuda()
+        discriminator = discriminator.cuda()
+
+    print("Moved models to GPU")
     # Initialize weights
     generator.apply(util.weights_init)
     discriminator.apply(util.weights_init)
 
+    new_epoch = 0
+    if args.resume:
+        print("Resuming from epoch " + args.resume)
+        new_epoch = int(args.resume) + 1
+        gen_state = torch.load(constants.SAVE_PATH + 'g_epoch' + str(args.resume))
+        generator.load_state_dict(gen_state)
+        dis_state = torch.load(constants.SAVE_PATH + 'd_epoch' + str(args.resume))
+        discriminator.load_state_dict(dis_state)
+
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
-
+    print("Added optimizers")
 
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
@@ -104,16 +130,20 @@ def main():
 
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
-
+    
+    
     # Loop over dataset N times
-    for epoch in range(constants.NUM_EPOCHS):
-        print ("Epoch: %d" %(epoch))
+    for epoch in range(new_epoch, constants.NUM_EPOCHS):
+        print("Epoch %d" % (epoch))
         for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
             batch_keys = [x for x in batch_iter if x is not None]
-
+            if len(batch_keys) != noise_vec.size()[0]:
+                noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            if torch.cuda.is_available():
+                noise_vec = noise_vec.cuda()
             # Zero out gradient
             discriminator.zero_grad()
-
+            
             # Get batch data
             true_caption = get_text_description(text_caption_dict, batch_keys)
             true_img = choose_true_image(image_dict, batch_keys)
@@ -123,9 +153,14 @@ def main():
             gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, generator)
 
             # Run through discriminator
-            real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
-            wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
-            fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            if torch.cuda.is_available():
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
 
             # Train discriminator
             d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
@@ -134,7 +169,10 @@ def main():
 
             # Train generator
             generator.zero_grad()
-            new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            if torch.cuda.is_available():
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
             g_loss = generator.loss(new_fake_img_passed)
             g_loss.backward(retain_graph=True)
             g_optimizer.step()
@@ -143,7 +181,8 @@ def main():
         print 'D Loss: ', d_loss.data[0]
 
         # Save images
-        currImage = gen_image[0].data.numpy()
+        currImage = gen_image[0].data.cpu()
+        currImage = currImage.numpy()
         currImage = np.swapaxes(currImage, 0, 1)
         currImage = np.swapaxes(currImage, 1, 2)
         scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
