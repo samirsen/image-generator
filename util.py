@@ -23,32 +23,58 @@ def load_dataset_map():
     print(len(train_ids), len(val_ids), len(test_ids), "Train, val, test examples, respectively")
     filenames = [name for name in os.listdir('Data/' + constants.ENTIRE_DATASET) if name.endswith('.jpg')]
     image_paths = sorted(filenames)
-    print(image_paths)
-
+    dataset_map = {}
+    for i, name in enumerate(image_paths):
+        if i in train_ids:
+            dataset_map[name] = 'train'
+        elif i in test_ids:
+            dataset_map[name] ='test'
+        elif i in val_ids:
+            dataset_map[name] ='val'
+        else:
+            print("Invalid ID!")
+    return dataset_map
 
 
 # Adapted from https://github.com/paarthneekhara/text-to-image
 # Takes the directoy and file name of the hdf5 file that contains the word vectors
 # Returns a dict from image to list of captions
-def load_text_vec(directory, file_name):
+def load_text_vec(directory, file_name, dataset_map):
     h = h5py.File(os.path.join(directory, file_name))
-    captions = {}
+    train_captions, val_captions, test_captions = {}, {}, {}
     for item in h.iteritems():
-        captions[item[0]] = np.array(item[1])
+        name = item[0]
+        if dataset_map[name] == 'train':
+            train_captions[name] = np.array(item[1])
+        elif dataset_map[name] =='val':
+            val_captions[name] = np.array(item[1])
+        elif dataset_map[name] =='test':
+            test_captions[name] = np.array(item[1])
+        else:
+            print("Invalid name")
 
-    return captions
+    return train_captions, val_captions, test_captions
 
 # Takes in the directory and a list of file names and returns a dict of file name -> images
-def load_images(directory, image_file_names):
+def load_images(directory, image_file_names, dataset_map):
     train_image_dict, val_image_dict, test_image_dict = {}, {}, {}
     for name in image_file_names:
         image_file = os.path.join(directory + name)
         curr_image = skimage.io.imread(image_file)
         # Resize image to correct size as float 32
         resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
-        image_dict[name] = resized_image
 
-    return image_dict
+        if dataset_map[name] =='train':
+            train_image_dict[name] = resized_image
+        elif dataset_map[name] =='val':
+            val_image_dict[name] = resized_image
+        elif dataset_map[name] =='test':
+            test_image_dict[name] = resized_image
+        else:
+            print("Invalid name")
+
+        
+        return train_image_dict, val_image_dict, test_image_dict
 
 
 # custom weights initialization called on netG and netD

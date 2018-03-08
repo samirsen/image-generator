@@ -81,11 +81,12 @@ def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
 def main():
     print("Starting..")
     model_options = constants.MAIN_MODEL_OPTIONS
-
+    # Load map mapping examples to their train/dev/test split
+    dataset_map = util.load_dataset_map()
     # Load the caption text vectors
-    text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
+    train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
 
-    image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
+    train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys(), dataset_map)
 
     print("Loaded images")
     noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
