@@ -85,8 +85,8 @@ def main():
     dataset_map = util.load_dataset_map()
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
-
-    train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys(), dataset_map)
+    filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+    train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
 
     print("Loaded images")
     noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
@@ -139,7 +139,7 @@ def main():
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
-        for i, batch_iter in enumerate(grouper(text_caption_dict.keys(), constants.BATCH_SIZE)):
+        for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
             if len(batch_keys) != noise_vec.size()[0]:
                 noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
@@ -149,12 +149,12 @@ def main():
             discriminator.zero_grad()
             
             # Get batch data
-            true_caption = get_text_description(text_caption_dict, batch_keys)
-            true_img = choose_true_image(image_dict, batch_keys)
-            wrong_img = choose_wrong_image(image_dict, batch_keys)
+            true_caption = get_text_description(train_captions, batch_keys)
+            true_img = choose_true_image(train_image_dict, batch_keys)
+            wrong_img = choose_wrong_image(train_image_dict, batch_keys)
 
             # Run through generator
-            gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, generator)
+            gen_image = generate_step(train_captions, noise_vec, batch_keys, generator)
 
             # Run through discriminator
             if torch.cuda.is_available():
