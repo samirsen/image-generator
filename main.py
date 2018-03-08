@@ -247,7 +247,7 @@ def main():
         currImage = np.swapaxes(currImage, 1, 2)
         scipy.misc.imsave(constants.SAVE_PATH + 'images/epoch' + str(epoch) + '.png', currImage)
         # Save model
-        if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
+        if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:
             torch.save(generator.state_dict(), constants.SAVE_PATH + 'weights/g_epoch' + str(epoch))
             torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'weights/d_epoch' + str(epoch))
 
