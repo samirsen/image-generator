@@ -108,7 +108,9 @@ def main():
     discriminator.apply(util.weights_init)
 
     new_epoch = 0
-    losses = {"generator": [], "discriminator": []}
+    train_losses = {"generator": [], "discriminator": []}
+    val_losses = {"generator": [], "discriminator": []}
+    losses = {'train': train_losses, 'val': val_losses}
     if args.resume:
         print("Resuming from epoch " + args.resume)
         new_epoch = int(args.resume) + 1
@@ -145,6 +147,9 @@ def main():
                 noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
             if torch.cuda.is_available():
                 noise_vec = noise_vec.cuda()
+
+            discriminator.train()
+            generator.train()
             # Zero out gradient
             discriminator.zero_grad()
             
@@ -182,11 +187,55 @@ def main():
             g_optimizer.step()
 
             if i % constants.LOSS_SAVE_IDX == 0:
-                losses['generator'].append(g_loss.data[0])
-                losses['discriminator'].append(d_loss.data[0])
+                losses['train']['generator'].append((g_loss.data[0], epoch, i))
+                losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
 
-        print 'G Loss: ', g_loss.data[0]
-        print 'D Loss: ', d_loss.data[0]
+        print 'Training G Loss: ', g_loss.data[0]
+        print 'Training D Loss: ', d_loss.data[0]
+
+        # Calculate dev set loss
+        generator.eval()
+        discriminator.eval()
+        for i, batch_iter in enumerate(grouper(val_captions.keys(), constants.BATCH_SIZE)):
+            batch_keys = [x for x in batch_iter if x is not None]
+            if len(batch_keys) != noise_vec.size()[0]:
+                noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            if torch.cuda.is_available():
+                noise_vec = noise_vec.cuda()
+
+            # Get batch data
+            true_caption = get_text_description(val_captions, batch_keys)
+            true_img = choose_true_image(val_image_dict, batch_keys)
+            wrong_img = choose_wrong_image(val_image_dict, batch_keys)
+
+            # Run through generator
+            gen_image = generate_step(val_captions, noise_vec, batch_keys, generator)
+
+            # Run through discriminator
+            if torch.cuda.is_available():
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+
+            d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
+            if torch.cuda.is_available():
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            g_loss = generator.loss(new_fake_img_passed)
+
+            if i % constants.LOSS_SAVE_IDX == 0:
+                losses['val']['generator'].append((g_loss.data[0], epoch, i))
+                losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
+
+        print 'Val G Loss: ', g_loss.data[0]
+        print 'Val D Loss: ', d_loss.data[0]
+
+
 
         # Save losses
         torch.save(losses, constants.SAVE_PATH + 'losses')
@@ -196,11 +245,11 @@ def main():
         currImage = currImage.numpy()
         currImage = np.swapaxes(currImage, 0, 1)
         currImage = np.swapaxes(currImage, 1, 2)
-        scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
+        scipy.misc.imsave(constants.SAVE_PATH + 'images/epoch' + str(epoch) + '.png', currImage)
         # Save model
         if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
-            torch.save(generator.state_dict(), constants.SAVE_PATH + 'g_epoch' + str(epoch))
-            torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'd_epoch' + str(epoch))
+            torch.save(generator.state_dict(), constants.SAVE_PATH + 'weights/g_epoch' + str(epoch))
+            torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'weights/d_epoch' + str(epoch))
 
 
 

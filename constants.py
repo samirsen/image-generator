@@ -27,7 +27,7 @@ Model Constants
 main.py, gan_model.py
 '''
 # SAVE PATH FOR MODLE OPTIONS
-SAVE_PATH = 'Data/weights/'
+SAVE_PATH = 'Data/outputs/'
 # If true, prints status of creating model
 PRINT_MODEL_STATUS = True
 
