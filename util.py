@@ -56,9 +56,9 @@ def load_text_vec(directory, file_name, dataset_map):
     return train_captions, val_captions, test_captions
 
 # Takes in the directory and a list of file names and returns a dict of file name -> images
-def load_images(directory, image_file_names, dataset_map):
+def load_images(directory, filenames, dataset_map):
     train_image_dict, val_image_dict, test_image_dict = {}, {}, {}
-    for name in image_file_names:
+    for name in filenames:
         image_file = os.path.join(directory + name)
         curr_image = skimage.io.imread(image_file)
         # Resize image to correct size as float 32
@@ -74,7 +74,7 @@ def load_images(directory, image_file_names, dataset_map):
             print("Invalid name")
 
         
-        return train_image_dict, val_image_dict, test_image_dict
+    return train_image_dict, val_image_dict, test_image_dict
 
 
 # custom weights initialization called on netG and netD
