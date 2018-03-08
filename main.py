@@ -132,10 +132,9 @@ def main():
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
     # TODO: ADD L1/L2 Regularizaiton
     # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
-    # TODO: OPTIMIZE FOR GPU (CUDA)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
-
+    # TODO: Add image aug
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
     
@@ -195,8 +194,15 @@ def main():
 
         print 'Training G Loss: ', g_loss.data[0]
         print 'Training D Loss: ', d_loss.data[0]
-        print "Time: ", time.time()-st 
+        epoch_time = time.time()-st
+        print "Time: ", epoch_time
 
+        if epoch == constants.REPORT_EPOCH:
+            with open(constants.SAVE_PATH + 'report.txt') as f:
+                f.write(constants.EXP_REPORT)
+                f.write("Time per epoch: " + epoch_time)
+            print("Saved report")
+            
         # Calculate dev set loss
         generator.eval()
         discriminator.eval()
