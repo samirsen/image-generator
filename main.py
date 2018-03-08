@@ -16,6 +16,7 @@ from itertools import izip_longest
 import scipy.misc
 import matplotlib.pyplot as plt
 import argparse
+import time
 
 np.random.seed(42)
 
@@ -83,6 +84,7 @@ def main():
     model_options = constants.MAIN_MODEL_OPTIONS
     # Load map mapping examples to their train/dev/test split
     dataset_map = util.load_dataset_map()
+    print("Loading data")
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
     filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
@@ -101,8 +103,8 @@ def main():
         print("CUDA is available")
         generator = generator.cuda()
         discriminator = discriminator.cuda()
-
-    print("Moved models to GPU")
+        print("Moved models to GPU")
+        
     # Initialize weights
     generator.apply(util.weights_init)
     discriminator.apply(util.weights_init)
@@ -141,6 +143,7 @@ def main():
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
+        st = time.time()
         for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
             if len(batch_keys) != noise_vec.size()[0]:
@@ -192,6 +195,7 @@ def main():
 
         print 'Training G Loss: ', g_loss.data[0]
         print 'Training D Loss: ', d_loss.data[0]
+        print "Time: ", time.time()-st 
 
         # Calculate dev set loss
         generator.eval()

@@ -4,6 +4,16 @@ Holds all of the constants info of the project
 '''
 import torch.nn as nn
 
+
+
+'''
+Experimental management constants
+'''
+# Epoch used to declare something as an experiment and output a report
+REPORT_EPOCH = 100
+EXP_REPORT = "Base model with LR set to 0.0001"
+
+
 '''
 data_loader.py constants
 '''
@@ -19,8 +29,6 @@ DIRECTORY_PATH = ENTIRE_DATASET
 # The name of the output file that the word vectors will be saved as.
 # This file name should end with '.hdf5'
 VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
-
-
 
 '''
 Model Constants
@@ -39,7 +47,7 @@ BATCH_SIZE = 128
 # How often to save losses
 LOSS_SAVE_IDX = 1
 # Learning rate for the Adam Optimizer
-LR = 0.0002
+LR = 0.0001
 # Beta options for the Adam Optimizer
 BETAS = (0.5, 0.999)
 # Size for each dimension of the image
