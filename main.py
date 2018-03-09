@@ -56,7 +56,7 @@ def choose_wrong_image(image_dict, batch_keys):
 
         wrong_image.append(image_dict[wrong_key])
     wrong_image = np.array(wrong_image)
-    wrong_image = augment_image_batch(true_img)
+    wrong_image = augment_image_batch(wrong_image)
     wrong_image = np.swapaxes(wrong_image, 2, 3)
     wrong_image = np.swapaxes(wrong_image, 1, 2)
     return wrong_image
