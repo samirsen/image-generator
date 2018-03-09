@@ -11,7 +11,7 @@ Experimental management constants
 '''
 # Epoch used to declare something as an experiment and output a report
 REPORT_EPOCH = 1
-EXP_REPORT = "Base model with LR set to 0.0001"
+EXP_REPORT = "Base model with LR set to 0.0001 and data aug"
 
 
 '''
