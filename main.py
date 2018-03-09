@@ -17,9 +17,7 @@ import scipy.misc
 import matplotlib.pyplot as plt
 import argparse
 import time
-from torchvision import transforms
-
-np.random.seed(42)
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--resume')
@@ -70,10 +68,12 @@ def choose_true_image(image_dict, batch_keys):
     return true_img
 
 def augment_image_batch(images):
-    tms = transforms.Compose([transforms.RandomHorizontalFlip(p=.5), transforms.RandomResizedCrop(constants.IMAGE_SIZE, scale=(.8, 1))])
     batch_size = images.shape[0]
     for i in range(batch_size):
-        images[i] = tms(images[i])
+        curr = images[i, :, :, :]
+        if np.random.rand() > .5:
+            curr = np.flip(curr, 1)
+        images[i, :, :, :] = curr
     return images
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
@@ -88,15 +88,31 @@ def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
 
 def main():
     print("Starting..")
+    output_path = constants.SAVE_PATH
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+        print("Made output directory")
+    else:
+        print("WARNING: starting training with an existing outputs directory")
+    if not os.path.exists(output_path + 'weights/'):
+        os.makedirs(output_path + 'weights/')
+        print("Made weights directory")
+    if not os.path.exists(output_path + 'images/'):
+        os.makedirs(output_path + 'images/')
+        print("Made images directory")
     model_options = constants.MAIN_MODEL_OPTIONS
     # Load map mapping examples to their train/dev/test split
     dataset_map = util.load_dataset_map()
     print("Loading data")
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
-    filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
-    train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
-
+    # Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
+    # filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+    # train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
+    # image_dicts = [train_image_dict, val_image_dict, test_image_dict]
+    # torch.save(image_dicts, "Data/flowers_dicts.torch")
+    image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
+    train_image_dict, val_image_dict, test_image_dict = image_dicts
     print("Loaded images")
     noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
     
@@ -123,9 +139,9 @@ def main():
     if args.resume:
         print("Resuming from epoch " + args.resume)
         new_epoch = int(args.resume) + 1
-        gen_state = torch.load(constants.SAVE_PATH + 'g_epoch' + str(args.resume))
+        gen_state = torch.load(constants.SAVE_PATH + 'weights/g_epoch' + str(args.resume))
         generator.load_state_dict(gen_state)
-        dis_state = torch.load(constants.SAVE_PATH + 'd_epoch' + str(args.resume))
+        dis_state = torch.load(constants.SAVE_PATH + 'weights/d_epoch' + str(args.resume))
         discriminator.load_state_dict(dis_state)
         losses = torch.load(constants.SAVE_PATH + 'losses')
 
@@ -205,9 +221,9 @@ def main():
         print "Time: ", epoch_time
 
         if epoch == constants.REPORT_EPOCH:
-            with open(constants.SAVE_PATH + 'report.txt') as f:
+            with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
                 f.write(constants.EXP_REPORT)
-                f.write("Time per epoch: " + epoch_time)
+                f.write("Time per epoch: " + str(epoch_time))
             print("Saved report")
             
         # Calculate dev set loss
