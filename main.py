@@ -223,7 +223,7 @@ def main():
         if epoch == constants.REPORT_EPOCH:
             with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
                 f.write(constants.EXP_REPORT)
-                f.write("Time per epoch: " + epoch_time)
+                f.write("Time per epoch: " + str(epoch_time))
             print("Saved report")
             
         # Calculate dev set loss
