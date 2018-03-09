@@ -52,6 +52,10 @@ LR = 0.0001
 BETAS = (0.5, 0.999)
 # Size for each dimension of the image
 IMAGE_SIZE = 128
+# Size of GloVe Embeddings
+EMBED_DIM = 300
+# Average or sum of glove vectors
+REDUCE_TYPE = 'average' 
 
 
 # Options for the main model
