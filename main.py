@@ -56,21 +56,21 @@ def choose_wrong_image(image_dict, batch_keys):
 
         wrong_image.append(image_dict[wrong_key])
     wrong_image = np.array(wrong_image)
+    wrong_image = augment_image_batch(true_img)
     wrong_image = np.swapaxes(wrong_image, 2, 3)
     wrong_image = np.swapaxes(wrong_image, 1, 2)
-    wrong_image = augment_image_batch(true_img)
     return wrong_image
 
 # Finds the true image for the given batch data
 def choose_true_image(image_dict, batch_keys):
     true_img = np.array([image_dict[k] for k in batch_keys])
+    true_img = augment_image_batch(true_img)
     true_img = np.swapaxes(true_img, 2, 3)
     true_img = np.swapaxes(true_img, 1, 2)
-    true_img = augment_image_batch(true_img)
     return true_img
 
 def augment_image_batch(images):
-    tms = transforms.Compose([transforms.RandomHorizontalFlip(.5), transforms.RandomResizedCrop(constants.IMAGE_SIZE, scale=(.8, 1))])
+    tms = transforms.Compose([transforms.RandomHorizontalFlip(p=.5), transforms.RandomResizedCrop(constants.IMAGE_SIZE, scale=(.8, 1))])
     batch_size = images.shape[0]
     for i in range(batch_size):
         images[i] = tms(images[i])
