@@ -70,8 +70,8 @@ def choose_true_image(image_dict, batch_keys):
     return true_img
 
 def augment_image_batch(images):
-    transforms = transforms.Compose([transforms.RandomHorizontalFlip(.5)])
-
+    tms = transforms.Compose([transforms.RandomHorizontalFlip(.5), transforms.RandomResizedCrop(constants.IMAGE_SIZE, scale=(.8, 1))])
+    return [tms(x) for x in images]
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
