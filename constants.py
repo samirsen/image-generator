@@ -32,8 +32,9 @@ VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 
 '''
 Model Constants
-main.py, gan_model.py
+main.py
 '''
+FLOWERS_DICTS_PATH = 'Data/flowers_dicts.torch'
 # SAVE PATH FOR MODLE OPTIONS
 SAVE_PATH = 'Data/outputs/'
 # If true, prints status of creating model
