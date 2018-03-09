@@ -71,7 +71,10 @@ def choose_true_image(image_dict, batch_keys):
 
 def augment_image_batch(images):
     tms = transforms.Compose([transforms.RandomHorizontalFlip(.5), transforms.RandomResizedCrop(constants.IMAGE_SIZE, scale=(.8, 1))])
-    return [tms(x) for x in images]
+    batch_size = images.shape[0]
+    for i in range(batch_size):
+        images[i] = tms(images[i])
+    return images
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
