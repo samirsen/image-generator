@@ -92,6 +92,8 @@ def main():
     if not os.path.exists(output_path):
         os.makedirs(output_path)
         print("Made output directory")
+    else:
+        print("WARNING: starting training with an existing outputs directory")
     if not os.path.exists(output_path + 'weights/'):
         os.makedirs(output_path + 'weights/')
         print("Made weights directory")
@@ -137,9 +139,9 @@ def main():
     if args.resume:
         print("Resuming from epoch " + args.resume)
         new_epoch = int(args.resume) + 1
-        gen_state = torch.load(constants.SAVE_PATH + 'g_epoch' + str(args.resume))
+        gen_state = torch.load(constants.SAVE_PATH + 'weights/g_epoch' + str(args.resume))
         generator.load_state_dict(gen_state)
-        dis_state = torch.load(constants.SAVE_PATH + 'd_epoch' + str(args.resume))
+        dis_state = torch.load(constants.SAVE_PATH + 'weights/d_epoch' + str(args.resume))
         discriminator.load_state_dict(dis_state)
         losses = torch.load(constants.SAVE_PATH + 'losses')
 
