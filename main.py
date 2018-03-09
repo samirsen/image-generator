@@ -17,6 +17,7 @@ import scipy.misc
 import matplotlib.pyplot as plt
 import argparse
 import time
+from torchvision import transforms
 
 np.random.seed(42)
 
@@ -57,7 +58,7 @@ def choose_wrong_image(image_dict, batch_keys):
     wrong_image = np.array(wrong_image)
     wrong_image = np.swapaxes(wrong_image, 2, 3)
     wrong_image = np.swapaxes(wrong_image, 1, 2)
-
+    wrong_image = augment_image_batch(true_img)
     return wrong_image
 
 # Finds the true image for the given batch data
@@ -65,8 +66,11 @@ def choose_true_image(image_dict, batch_keys):
     true_img = np.array([image_dict[k] for k in batch_keys])
     true_img = np.swapaxes(true_img, 2, 3)
     true_img = np.swapaxes(true_img, 1, 2)
-
+    true_img = augment_image_batch(true_img)
     return true_img
+
+def augment_image_batch(images):
+    transforms = transforms.Compose([transforms.RandomHorizontalFlip(.5)])
 
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
