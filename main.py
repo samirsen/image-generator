@@ -114,19 +114,19 @@ def main():
     image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
     train_image_dict, val_image_dict, test_image_dict = image_dicts
     print("Loaded images")
-    
-    
+
+
     generator = Generator(model_options)
     discriminator = Discriminator(model_options)
 
-    
+
 
     if torch.cuda.is_available():
         print("CUDA is available")
         generator = generator.cuda()
         discriminator = discriminator.cuda()
         print("Moved models to GPU")
-        
+
     # Initialize weights
     generator.apply(util.weights_init)
     discriminator.apply(util.weights_init)
@@ -145,10 +145,15 @@ def main():
         losses = torch.load(constants.SAVE_PATH + 'losses')
 
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
+    # Changes the optimizer to SGD if declared in constants
+    if constants.D_OPTIMIZER_SGD:
+        d_optimizer = optim.SGD(discriminator.parameters(), lr=constants.LR)
+    else:
+        d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
+
     print("Added optimizers")
 
-    
+
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
@@ -156,17 +161,14 @@ def main():
     # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
-<<<<<<< HEAD
     # TODO: TRAIN/VAL/TEST SETS
     # TODO: INCREASE NUM EPOCHS (200?)
 
-=======
     # TODO: Add image aug
->>>>>>> 56ae3a3bd6079929cbd37b47a0d07898319dba1a
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
-    
-    
+
+
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
@@ -181,7 +183,7 @@ def main():
             generator.train()
             # Zero out gradient
             discriminator.zero_grad()
-            
+
             # Get batch data
             true_caption = get_text_description(train_captions, batch_keys)
             true_img = choose_true_image(train_image_dict, batch_keys)
@@ -229,7 +231,7 @@ def main():
                 f.write(constants.EXP_REPORT)
                 f.write("Time per epoch: " + str(epoch_time))
             print("Saved report")
-            
+
         # Calculate dev set loss
         generator.eval()
         discriminator.eval()

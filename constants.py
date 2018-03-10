@@ -47,16 +47,26 @@ NUM_EPOCHS = 1000
 BATCH_SIZE = 128
 # How often to save losses
 LOSS_SAVE_IDX = 1
-# Learning rate for the Adam Optimizer
+
+# OPTIMIZER OPTIONS
+# True if optimizer will be stochastic gradient descent
+# False if optimizer will be adam
+D_OPTIMIZER_SGD = True
+
+
+
+# Learning rate for the Optimizer
 LR = 0.0001
 # Beta options for the Adam Optimizer
 BETAS = (0.5, 0.999)
+
+
 # Size for each dimension of the image
 IMAGE_SIZE = 128
 # Size of GloVe Embeddings
 EMBED_DIM = 300
 # Average or sum of glove vectors
-REDUCE_TYPE = 'average' 
+REDUCE_TYPE = 'average'
 
 
 # Options for the main model
@@ -69,4 +79,7 @@ MAIN_MODEL_OPTIONS = {
     'num_df':64,                # Number of discriminator filters in first layer of discriminator
     'image_channels':3,         # Number of channels for the output of the generator and input of discriminator
     'leak':0.2,                 # Leak for Leaky ReLU
+    'label_smooth':0.1,         # One-sided label smoothing for the real labels
+                                # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
+                                # https://arxiv.org/pdf/1606.03498.pdf
     }

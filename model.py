@@ -55,7 +55,7 @@ class TextModel(nn.Module):
 		elif constants.REDUCE_TYPE == "sum":
 			word_vecs = torch.sum(word_vecs, axis=1)
 
-		return word_vecs 
+		return word_vecs
 
 
 
@@ -83,23 +83,23 @@ class Generator(nn.Module):
 			# Input Dim: batch_size x (concat_dim) x 1 x 1
 			nn.ConvTranspose2d(self.options['concat_dim'], self.options['num_gf'] * 16, 4, 1, 0, bias=False),
 			nn.BatchNorm2d(self.options['num_gf'] * 16),
-			nn.ReLU(inplace=True),
+			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 			# Dim: batch_size x (num_gf * 16) x 4 x 4
 			nn.ConvTranspose2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, 4, 2, 1, bias=False),
 			nn.BatchNorm2d(self.options['num_gf'] * 8),
-			nn.ReLU(inplace=True),
+			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 			# Dim: batch_size x (num_gf * 8) x 8 x 8
 			nn.ConvTranspose2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, 4, 2, 1, bias=False),
 			nn.BatchNorm2d(self.options['num_gf'] * 4),
-			nn.ReLU(inplace=True),
+			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 			# Dim: batch_size x (num_gf * 4) x 16 x 16
 			nn.ConvTranspose2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, 4, 2, 1, bias=False),
 			nn.BatchNorm2d(self.options['num_gf'] * 2),
-			nn.ReLU(inplace=True),
+			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 			# Dim: batch_size x (num_gf * 2) x 32 x 32
 			nn.ConvTranspose2d(self.options['num_gf'] * 2, self.options['num_gf'], 4, 2, 1, bias=False),
 			nn.BatchNorm2d(self.options['num_gf']),
-			nn.ReLU(inplace=True),
+			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 			# Dim: batch_size x (num_gf) x 64 x 64
 			nn.ConvTranspose2d(self.options['num_gf'], self.options['image_channels'], 4, 2, 1, bias=False),
 			nn.Tanh()
@@ -197,7 +197,8 @@ class Discriminator(nn.Module):
 	# Discriminator Loss
 	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
 	def loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
-		d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed))
+		# Add one-sided label smoothing to the real images of the discriminator
+		d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - self.options['label_smooth'])
 		d_loss2 = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
 		d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
 
