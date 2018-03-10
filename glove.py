@@ -5,10 +5,10 @@ captions and take average of words for a
 300 dimensional representation of caption.
 """
 
-import torch
-import torchtext.vocab as vocab
-import numpy as np
-import constants
+# import torch
+# import torchtext.vocab as vocab
+# import numpy as np
+# import constants
 
 
 class Glove:

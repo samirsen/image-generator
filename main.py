@@ -114,7 +114,6 @@ def main():
     image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
     train_image_dict, val_image_dict, test_image_dict = image_dicts
     print("Loaded images")
-    noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
     
     
     generator = Generator(model_options)
@@ -168,8 +167,7 @@ def main():
         st = time.time()
         for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            if len(batch_keys) != noise_vec.size()[0]:
-                noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
             if torch.cuda.is_available():
                 noise_vec = noise_vec.cuda()
 
@@ -231,8 +229,7 @@ def main():
         discriminator.eval()
         for i, batch_iter in enumerate(grouper(val_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            if len(batch_keys) != noise_vec.size()[0]:
-                noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
             if torch.cuda.is_available():
                 noise_vec = noise_vec.cuda()
 
