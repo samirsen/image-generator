@@ -35,7 +35,7 @@ class Glove:
     def closest_word(self, vector, n=10):
         """Find the most likely word for a given word vector"""
         all_dists = [(w, torch.dist(vector, get_word(w))) for w in glove.itos]
-        return sorted(all_dists, key=lambda dist: dist[1])[:n])
+        return sorted(all_dists, key=lambda dist: dist[1][:n])
 
     def get_word_vectors(self, captions):
 		# captions = Batch_size x 1
@@ -48,10 +48,10 @@ class Glove:
 
 		return Variable(word_vecs)
 
-	def _reduce_along_axis(self, word_vecs):
-		if constants.REDUCE_TYPE == "average":
-			word_vecs = torch.mean(word_vecs, dim=1)
-		elif constants.REDUCE_TYPE == "sum":
-			word_vecs = torch.sum(word_vecs, dim=1)
+    def _reduce_along_axis(self, word_vecs):
+    	if constants.REDUCE_TYPE == "average":
+    		word_vecs = torch.mean(word_vecs, dim=1)
+    	elif constants.REDUCE_TYPE == "sum":
+    		word_vecs = torch.sum(word_vecs, dim=1)
 
-		return word_vecs
+    	return word_vecs

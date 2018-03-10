@@ -24,7 +24,7 @@ SMALL_DATASET = 'flowers/smalljpg/'
 
 # Choose which directory holds the images you want for the flowers
 # TODO: UPDATE THIS ONE FOR WHICH DATA SET YOU WANT
-DIRECTORY_PATH = ENTIRE_DATASET
+DIRECTORY_PATH = SMALL_DATASET
 
 # The name of the output file that the word vectors will be saved as.
 # This file name should end with '.hdf5'

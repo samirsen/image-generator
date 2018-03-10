@@ -153,6 +153,7 @@ def main():
 
     print("Added optimizers")
 
+    return
 
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
