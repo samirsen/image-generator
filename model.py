@@ -59,14 +59,6 @@ class TextModel(nn.Module):
 		"""We use generator loss to update LSTM weights."""
 		pass
 
-	def _reduce_along_axis(self, word_vecs):
-		if constants.REDUCE_TYPE == "average":
-			word_vecs = torch.mean(word_vecs, axis=1)
-		elif constants.REDUCE_TYPE == "sum":
-			word_vecs = torch.sum(word_vecs, axis=1)
-
-		return word_vecs
-
 
 
 class Generator(nn.Module):
