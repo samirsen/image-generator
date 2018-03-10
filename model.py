@@ -10,9 +10,11 @@ import torch.nn as nn
 import torch.nn.functional as f
 from torch.autograd import Variable
 import torch.optim as optim
+import numpy as np
 import constants
 import collections
 import functools
+from glove import *
 
 '''
 	OPTIONS
@@ -27,6 +29,36 @@ import functools
 	gfc_dim : Dimension of gen untis for for fully connected layer 1024
 	batch_size : Batch Size 64
 '''
+
+class TextModel(nn.Module):
+	def __init__(self, options):
+		super(TextModel, self).__init__()
+
+		self.options = options
+		self.embeddings = get_glove()
+
+	def get_vectors(self, captions):
+		# captions = Batch_size x 1
+		batch_size = captions.shape[0]
+		word_vecs = torch.Tensor()
+
+		for i, caption in enumerate(captions):
+			caption_rep = get_words(caption)
+			word_vecs = torch.cat(word_vecs, caption_rep)
+
+		word_vecs = self._reduce_along_axis(word_vecs)
+		return Variable(word_vecs)
+
+	def _reduce_along_axis(self, word_vecs):
+		if constants.REDUCE_TYPE == "average":
+			word_vecs = torch.mean(word_vecs, axis=1)
+		elif constants.REDUCE_TYPE == "sum":
+			word_vecs = torch.sum(word_vecs, axis=1)
+
+		return word_vecs 
+
+
+
 class Generator(nn.Module):
 	def __init__(self, options):
 		super(Generator, self).__init__()
@@ -93,8 +125,6 @@ class Generator(nn.Module):
 		g_loss = f.binary_cross_entropy(logits, torch.ones_like(logits))
 
 		return g_loss
-
-
 
 
 class Discriminator(nn.Module):

@@ -4,6 +4,16 @@ Holds all of the constants info of the project
 '''
 import torch.nn as nn
 
+
+
+'''
+Experimental management constants
+'''
+# Epoch used to declare something as an experiment and output a report
+REPORT_EPOCH = 1
+EXP_REPORT = "Base model with LR set to 0.0001 and data aug and requires_grad=False for inputs"
+
+
 '''
 data_loader.py constants
 '''
@@ -20,14 +30,13 @@ DIRECTORY_PATH = ENTIRE_DATASET
 # This file name should end with '.hdf5'
 VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 
-
-
 '''
 Model Constants
-main.py, gan_model.py
+main.py
 '''
+FLOWERS_DICTS_PATH = 'Data/flowers_dicts.torch'
 # SAVE PATH FOR MODLE OPTIONS
-SAVE_PATH = 'Data/weights/'
+SAVE_PATH = 'Data/outputs/'
 # If true, prints status of creating model
 PRINT_MODEL_STATUS = True
 
@@ -36,12 +45,18 @@ PRINT_MODEL_STATUS = True
 NUM_EPOCHS = 1000
 # The batch size for training
 BATCH_SIZE = 128
+# How often to save losses
+LOSS_SAVE_IDX = 1
 # Learning rate for the Adam Optimizer
-LR = 0.0002
+LR = 0.0001
 # Beta options for the Adam Optimizer
 BETAS = (0.5, 0.999)
 # Size for each dimension of the image
 IMAGE_SIZE = 128
+# Size of GloVe Embeddings
+EMBED_DIM = 300
+# Average or sum of glove vectors
+REDUCE_TYPE = 'average' 
 
 
 # Options for the main model

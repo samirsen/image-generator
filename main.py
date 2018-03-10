@@ -16,8 +16,8 @@ from itertools import izip_longest
 import scipy.misc
 import matplotlib.pyplot as plt
 import argparse
-
-np.random.seed(42)
+import time
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--resume')
@@ -54,19 +54,27 @@ def choose_wrong_image(image_dict, batch_keys):
 
         wrong_image.append(image_dict[wrong_key])
     wrong_image = np.array(wrong_image)
+    wrong_image = augment_image_batch(wrong_image)
     wrong_image = np.swapaxes(wrong_image, 2, 3)
     wrong_image = np.swapaxes(wrong_image, 1, 2)
-
     return wrong_image
 
 # Finds the true image for the given batch data
 def choose_true_image(image_dict, batch_keys):
     true_img = np.array([image_dict[k] for k in batch_keys])
+    true_img = augment_image_batch(true_img)
     true_img = np.swapaxes(true_img, 2, 3)
     true_img = np.swapaxes(true_img, 1, 2)
-
     return true_img
 
+def augment_image_batch(images):
+    batch_size = images.shape[0]
+    for i in range(batch_size):
+        curr = images[i, :, :, :]
+        if np.random.rand() > .5:
+            curr = np.flip(curr, 1)
+        images[i, :, :, :] = curr
+    return images
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
@@ -80,13 +88,32 @@ def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
 
 def main():
     print("Starting..")
+    output_path = constants.SAVE_PATH
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+        print("Made output directory")
+    else:
+        print("WARNING: starting training with an existing outputs directory")
+    if not os.path.exists(output_path + 'weights/'):
+        os.makedirs(output_path + 'weights/')
+        print("Made weights directory")
+    if not os.path.exists(output_path + 'images/'):
+        os.makedirs(output_path + 'images/')
+        print("Made images directory")
     model_options = constants.MAIN_MODEL_OPTIONS
-
+    # Load map mapping examples to their train/dev/test split
+    dataset_map = util.load_dataset_map()
+    print("Loading data")
     # Load the caption text vectors
-    text_caption_dict = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
-
-    image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, text_caption_dict.keys())
-    noise_vec = Variable(torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1))
+    train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
+    # Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
+    # filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+    # train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
+    # image_dicts = [train_image_dict, val_image_dict, test_image_dict]
+    # torch.save(image_dicts, "Data/flowers_dicts.torch")
+    image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
+    train_image_dict, val_image_dict, test_image_dict = image_dicts
+    print("Loaded images")
     
     
     generator = Generator(model_options)
@@ -98,36 +125,44 @@ def main():
         print("CUDA is available")
         generator = generator.cuda()
         discriminator = discriminator.cuda()
-
-    print("Moved models to GPU")
+        print("Moved models to GPU")
+        
     # Initialize weights
     generator.apply(util.weights_init)
     discriminator.apply(util.weights_init)
 
     new_epoch = 0
+    train_losses = {"generator": [], "discriminator": []}
+    val_losses = {"generator": [], "discriminator": []}
+    losses = {'train': train_losses, 'val': val_losses}
     if args.resume:
         print("Resuming from epoch " + args.resume)
         new_epoch = int(args.resume) + 1
-        gen_state = torch.load(constants.SAVE_PATH + 'g_epoch' + str(args.resume))
+        gen_state = torch.load(constants.SAVE_PATH + 'weights/g_epoch' + str(args.resume))
         generator.load_state_dict(gen_state)
-        dis_state = torch.load(constants.SAVE_PATH + 'd_epoch' + str(args.resume))
+        dis_state = torch.load(constants.SAVE_PATH + 'weights/d_epoch' + str(args.resume))
         discriminator.load_state_dict(dis_state)
+        losses = torch.load(constants.SAVE_PATH + 'losses')
 
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=constants.LR, betas=constants.BETAS)
     print("Added optimizers")
 
+    
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
     # TODO: ADD L1/L2 Regularizaiton
     # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
-    # TODO: OPTIMIZE FOR GPU (CUDA)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
+<<<<<<< HEAD
     # TODO: TRAIN/VAL/TEST SETS
     # TODO: INCREASE NUM EPOCHS (200?)
 
+=======
+    # TODO: Add image aug
+>>>>>>> 56ae3a3bd6079929cbd37b47a0d07898319dba1a
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
     
@@ -135,22 +170,25 @@ def main():
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
-        for batch_iter in grouper(text_caption_dict.keys(), constants.BATCH_SIZE):
+        st = time.time()
+        for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            if len(batch_keys) != noise_vec.size()[0]:
-                noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
             if torch.cuda.is_available():
                 noise_vec = noise_vec.cuda()
+
+            discriminator.train()
+            generator.train()
             # Zero out gradient
             discriminator.zero_grad()
             
             # Get batch data
-            true_caption = get_text_description(text_caption_dict, batch_keys)
-            true_img = choose_true_image(image_dict, batch_keys)
-            wrong_img = choose_wrong_image(image_dict, batch_keys)
+            true_caption = get_text_description(train_captions, batch_keys)
+            true_img = choose_true_image(train_image_dict, batch_keys)
+            wrong_img = choose_wrong_image(train_image_dict, batch_keys)
 
             # Run through generator
-            gen_image = generate_step(text_caption_dict, noise_vec, batch_keys, generator)
+            gen_image = generate_step(train_captions, noise_vec, batch_keys, generator)
 
             # Run through discriminator
             if torch.cuda.is_available():
@@ -177,19 +215,77 @@ def main():
             g_loss.backward(retain_graph=True)
             g_optimizer.step()
 
-        print 'G Loss: ', g_loss.data[0]
-        print 'D Loss: ', d_loss.data[0]
+            if i % constants.LOSS_SAVE_IDX == 0:
+                losses['train']['generator'].append((g_loss.data[0], epoch, i))
+                losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
+
+        print 'Training G Loss: ', g_loss.data[0]
+        print 'Training D Loss: ', d_loss.data[0]
+        epoch_time = time.time()-st
+        print "Time: ", epoch_time
+
+        if epoch == constants.REPORT_EPOCH:
+            with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
+                f.write(constants.EXP_REPORT)
+                f.write("Time per epoch: " + str(epoch_time))
+            print("Saved report")
+            
+        # Calculate dev set loss
+        generator.eval()
+        discriminator.eval()
+        for i, batch_iter in enumerate(grouper(val_captions.keys(), constants.BATCH_SIZE)):
+            batch_keys = [x for x in batch_iter if x is not None]
+            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            if torch.cuda.is_available():
+                noise_vec = noise_vec.cuda()
+
+            # Get batch data
+            true_caption = get_text_description(val_captions, batch_keys)
+            true_img = choose_true_image(val_image_dict, batch_keys)
+            wrong_img = choose_wrong_image(val_image_dict, batch_keys)
+
+            # Run through generator
+            gen_image = generate_step(val_captions, noise_vec, batch_keys, generator)
+
+            # Run through discriminator
+            if torch.cuda.is_available():
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
+                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
+                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+
+            d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
+            if torch.cuda.is_available():
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+            else:
+                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            g_loss = generator.loss(new_fake_img_passed)
+
+            if i % constants.LOSS_SAVE_IDX == 0:
+                losses['val']['generator'].append((g_loss.data[0], epoch, i))
+                losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
+
+        print 'Val G Loss: ', g_loss.data[0]
+        print 'Val D Loss: ', d_loss.data[0]
+
+
+
+        # Save losses
+        torch.save(losses, constants.SAVE_PATH + 'losses')
 
         # Save images
         currImage = gen_image[0].data.cpu()
         currImage = currImage.numpy()
         currImage = np.swapaxes(currImage, 0, 1)
         currImage = np.swapaxes(currImage, 1, 2)
-        scipy.misc.imsave('Data/images/epoch' + str(epoch) + '.png', currImage)
+        scipy.misc.imsave(constants.SAVE_PATH + 'images/epoch' + str(epoch) + '.png', currImage)
         # Save model
-        if epoch % 10 == 0 or epoch == constants.NUM_EPOCHS - 1:
-            torch.save(generator.state_dict(), constants.SAVE_PATH + 'g_epoch' + str(epoch))
-            torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'd_epoch' + str(epoch))
+        if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:
+            torch.save(generator.state_dict(), constants.SAVE_PATH + 'weights/g_epoch' + str(epoch))
+            torch.save(discriminator.state_dict(), constants.SAVE_PATH + 'weights/d_epoch' + str(epoch))
 
 
 
