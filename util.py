@@ -73,7 +73,7 @@ def load_images(directory, filenames, dataset_map):
         else:
             print("Invalid name")
 
-        
+
     return train_image_dict, val_image_dict, test_image_dict
 
 
@@ -86,3 +86,21 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+
+def preprocess2(batch_input):
+    """Inputs for self.embeddings in TextModel(). Batch_input must be numpy padded"""
+    batch_size, sent_len = batch_input.shape
+    offsets = [sent_len * i for i in range(batch_size)]
+    return batch_input.flatten(), offsets
+
+
+def preprocess(batch_input):
+    """If batch_input isn't numpy"""
+    flatten, offsets = [], []
+    index = 0
+    for ex in batch_input:
+        offsets.append(index)
+        flatten.extend(ex)
+        index += len(ex)
+
+    return flatten, offsets 

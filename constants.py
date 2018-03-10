@@ -66,7 +66,9 @@ IMAGE_SIZE = 128
 # Size of GloVe Embeddings
 EMBED_DIM = 300
 # Average or sum of glove vectors
-REDUCE_TYPE = 'average'
+REDUCE_TYPE = 'mean'
+# Number of embeddings in Glove
+NUM_EMBEDDINGS = 400000
 
 
 # Options for the main model
