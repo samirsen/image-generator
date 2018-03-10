@@ -14,7 +14,8 @@ import numpy as np
 import constants
 import collections
 import functools
-from glove import *
+from util import * 
+from glove import Glove
 
 '''
 	OPTIONS
@@ -35,19 +36,28 @@ class TextModel(nn.Module):
 		super(TextModel, self).__init__()
 
 		self.options = options
-		self.embeddings = get_glove()
+		self.glove = Glove()
+		self._GloVe = self.glove.get_embeddings()
+		self.embeddings = nn.EmbeddingBag(constants.NUM_EMBEDDINGS, constants.EMBED_DIM, mode=constants.REDUCE_TYPE)
+		self.embeddings.weight = nn.Parameter(self._GloVe)
 
-	def get_vectors(self, captions):
-		# captions = Batch_size x 1
-		batch_size = captions.shape[0]
-		word_vecs = torch.Tensor()
 
-		for i, caption in enumerate(captions):
-			caption_rep = get_words(caption)
-			word_vecs = torch.cat(word_vecs, caption_rep)
+	def forward(self, batch_input):
+		"""
+		Pass a batch of image captions through LSTM layer to learn embeddings.
+		Input: python list of list ( batch_size x len(sentence_i) -- caption_word to glove index in main.py, content are indices in glove )
+		Output: batch of average or sum of hidden representations from LSTM
+		"""
+		# batch_ftrs dim = batch_size x m x 300 -- issue might be torch.cat sentence has diff amount of words.
+		# flatten, offsets -- flatten and keep track of index of starting word of each example
+		# list of list and keep track of start word of each sentence
+		flattened, offsets = preprocess(batch_input)
+		embed_vecs = self.embeddings(flattened, offsets)
 
-		word_vecs = self._reduce_along_axis(word_vecs)
-		return Variable(word_vecs)
+
+	def backward(self):
+		"""We use generator loss to update LSTM weights."""
+		pass
 
 	def _reduce_along_axis(self, word_vecs):
 		if constants.REDUCE_TYPE == "average":
@@ -55,8 +65,7 @@ class TextModel(nn.Module):
 		elif constants.REDUCE_TYPE == "sum":
 			word_vecs = torch.sum(word_vecs, axis=1)
 
-		return word_vecs 
-
+		return word_vecs
 
 
 class Generator(nn.Module):
