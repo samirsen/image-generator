@@ -28,7 +28,7 @@ def save_caption_vectors_ms_coco(data_dir, split, batch_size):
 
 	model = skipthoughts.load_model()
 	batch_no = 0
-	print "Total Batches", len(ic_data['annotations'])/batch_size
+	print ("Total Batches", len(ic_data['annotations'])/batch_size)
 
 	while batch_no*batch_size < len(ic_data['annotations']):
 		captions = []
@@ -39,8 +39,8 @@ def save_caption_vectors_ms_coco(data_dir, split, batch_size):
 			captions.append(ic_data['annotations'][idx]['caption'])
 			image_ids.append(ic_data['annotations'][idx]['image_id'])
 
-		print captions
-		print image_ids
+		print (captions)
+		print (image_ids)
 		# Thought Vectors
 		tv_batch = skipthoughts.encode(model, captions)
 		h5f_tv_batch = h5py.File( join(data_dir, 'tvs/'+split + '_tvs_' + str(batch_no)), 'w')
@@ -51,7 +51,7 @@ def save_caption_vectors_ms_coco(data_dir, split, batch_size):
 		h5f_tv_batch_image_ids.create_dataset('tv', data=image_ids)
 		h5f_tv_batch_image_ids.close()
 
-		print "Batches Done", batch_no, len(ic_data['annotations'])/batch_size
+		print ("Batches Done", batch_no, len(ic_data['annotations'])/batch_size)
 		batch_no += 1
 
 
@@ -60,8 +60,8 @@ def save_caption_vectors_flowers(data_dir):
 
 	img_dir = join(data_dir, constants.DIRECTORY_PATH)
 	image_files = [f for f in os.listdir(img_dir) if 'jpg' in f]
-	print image_files[300:400]
-	print len(image_files)
+	print (image_files[300:400])
+	print (len(image_files))
 	image_captions = { img_file : [] for img_file in image_files }
 
 	caption_dir = join(data_dir, 'flowers/text_c10')
@@ -81,7 +81,7 @@ def save_caption_vectors_flowers(data_dir):
 				# 5 captions per image
 				image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:5]
 
-	print len(image_captions)
+	print (len(image_captions))
 
 	model = skipthoughts.load_model()
 	encoded_captions = {}
@@ -90,8 +90,8 @@ def save_caption_vectors_flowers(data_dir):
 	for i, img in enumerate(image_captions):
 		st = time.time()
 		encoded_captions[img] = skipthoughts.encode(model, image_captions[img])
-		print i, len(image_captions), img
-		print "Seconds", time.time() - st
+		print (i, len(image_captions), img)
+		print ("Seconds", time.time() - st)
 
 
 	h = h5py.File(join(data_dir, constants.VEC_OUTPUT_FILE_NAME))
