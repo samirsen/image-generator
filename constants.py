@@ -23,8 +23,8 @@ ENTIRE_DATASET = 'flowers/jpg/'
 SMALL_DATASET = 'flowers/smalljpg/'
 
 # Choose which directory holds the images you want for the flowers
-# TODO: UPDATE THIS ONE FOR WHICH DATA SET YOU WANT
-DIRECTORY_PATH = SMALL_DATASET
+# NOTE: UPDATE THIS ONE FOR WHICH DATA SET YOU WANT
+DIRECTORY_PATH = ENTIRE_DATASET
 
 # The name of the output file that the word vectors will be saved as.
 # This file name should end with '.hdf5'
@@ -71,26 +71,34 @@ NUM_EMBEDDINGS = 400000
 # False if optimizer will be adam
 D_OPTIMIZER_SGD = True
 
+# WGAN Model Constants
+# Option to use wgan model
+# False will use vanilla gan
+USE_WGAN_MODEL = False
 
-# BEGAN Model Constants
+
+# BEGAN Model Constants (BUILT ON TOP OF WGAN)
+# NOTE: This has priority over both WGAN and the vanilla GAN
 USE_BEGAN_MODEL = False
-BEGAN_GAMMA = 0.5
-LAMBDA_K = 0.001
 
 
 # Options for the main model
 MAIN_MODEL_OPTIONS = {
-    'caption_vec_len':4800,     # Dimensions for the embedded captions vector
-    't_dim':256,                # Dimensions for the text vector input into the GAN
-    'z_dim':100,                # Dimensions for the noise vector input into the GAN
+    'caption_vec_len':4800,         # Dimensions for the embedded captions vector
+    't_dim':256,                    # Dimensions for the text vector input into the GAN
+    'z_dim':100,                    # Dimensions for the noise vector input into the GAN
     'image_size':IMAGE_SIZE,           # Number of pixels in each dimension of the image
-    'num_gf':64,                # Number of generator filters in first layer of generator
-    'num_df':64,                # Number of discriminator filters in first layer of discriminator
-    'image_channels':3,         # Number of channels for the output of the generator and input of discriminator
-    'leak':0.2,                 # Leak for Leaky ReLU
-    'label_smooth':0.1,         # One-sided label smoothing for the real labels
-                                # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
-                                # https://arxiv.org/pdf/1606.03498.pdf
-    'began_gamma':0.5,          # Gamma value for BEGAN model (balance between D and G)
-    'began_lambda_k':0.001,     # Learning rate for k of BEGAN model
+    'num_gf':64,                    # Number of generator filters in first layer of generator
+    'num_df':64,                    # Number of discriminator filters in first layer of discriminator
+    'image_channels':3,             # Number of channels for the output of the generator and input of discriminator
+    'leak':0.2,                     # Leak for Leaky ReLU
+    'label_smooth':0.1,             # One-sided label smoothing for the real labels
+                                    # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
+                                    # https://arxiv.org/pdf/1606.03498.pdf
+    # WGAN Options
+    'use_wgan':USE_WGAN_MODEL,      # Option to use the WGAN model (otherwise, it will be a vanilla GAN)
+    # BEGAN OPTIONS
+    'began_hidden_embed_size':64,   # The size of the hidden embedding of began discriminator
+    'began_gamma':0.5,              # Gamma value for BEGAN model (balance between D and G)
+    'began_lambda_k':0.001,         # Learning rate for k of BEGAN model
     }

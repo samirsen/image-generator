@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import constants
-from model import Generator, Discriminator
+from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
 import util
 import numpy as np
 import matplotlib.pyplot as plt
@@ -106,18 +106,25 @@ def main():
     print("Loading data")
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
-    # Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
+
+    # NOTE: Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
     # filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
     # train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
     # image_dicts = [train_image_dict, val_image_dict, test_image_dict]
     # torch.save(image_dicts, "Data/flowers_dicts.torch")
+
+
     image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
     train_image_dict, val_image_dict, test_image_dict = image_dicts
     print("Loaded images")
 
-
-    generator = Generator(model_options)
-    discriminator = Discriminator(model_options)
+    # Creates the model (BEGAN vs GAN/WGAN)
+    if constants.USE_BEGAN_MODEL:
+        generator = BeganGenerator(model_options)
+        discriminator = BeganDiscriminator(model_options)
+    else:
+        generator = Generator(model_options)
+        discriminator = Discriminator(model_options)
 
 
     if torch.cuda.is_available():
@@ -152,7 +159,6 @@ def main():
 
     print("Added optimizers")
 
-    return
 
     # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
 
