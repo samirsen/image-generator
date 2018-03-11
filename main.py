@@ -235,10 +235,10 @@ def main():
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
 
-        print 'Training G Loss: ', g_loss.data[0]
-        print 'Training D Loss: ', d_loss.data[0]
+        print ('Training G Loss: ', g_loss.data[0])
+        print ('Training D Loss: ', d_loss.data[0])
         epoch_time = time.time()-st
-        print "Time: ", epoch_time
+        print ("Time: ", epoch_time)
 
         if epoch == constants.REPORT_EPOCH:
             with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
@@ -284,8 +284,8 @@ def main():
                 losses['val']['generator'].append((g_loss.data[0], epoch, i))
                 losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
 
-        print 'Val G Loss: ', g_loss.data[0]
-        print 'Val D Loss: ', d_loss.data[0]
+        print ('Val G Loss: ', g_loss.data[0])
+        print ('Val D Loss: ', d_loss.data[0])
 
 
 

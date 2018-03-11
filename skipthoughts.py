@@ -6,8 +6,8 @@ import os
 
 import theano
 import theano.tensor as tensor
+import sys
 
-import cPickle as pkl
 import numpy
 import copy
 import nltk
@@ -15,6 +15,12 @@ import nltk
 from collections import OrderedDict, defaultdict
 from scipy.linalg import norm
 from nltk.tokenize import word_tokenize
+
+# Python 2 uses requires you to import cPickle separately
+if sys.version_info[0] < 3:
+	import cPickle as pkl
+else:
+	import pickle as pkl
 
 profile = False
 

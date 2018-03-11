@@ -2,7 +2,6 @@
 constants.py
 Holds all of the constants info of the project
 '''
-import torch.nn as nn
 
 
 
