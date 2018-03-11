@@ -55,8 +55,10 @@ def download_dataset(data_name):
         # from https://github.com/reedscot/icml2016 is problematic to download automatically, so included
         # the text_c10 directory from that archive as a bzipped file in the repo
         captions_tbz = os.path.join(flowers_dir, 'flowers_text_c10.tar.bz2')
+        captions_url = 'https://drive.google.com/file/d/0B0ywwgffWnLLcms2WWJQRFNSWXM/view'
         print('Extracting ' + captions_tbz)
-        captions_tar = tarfile.open(captions_tbz, 'w:bz2')
+        urlretrieve(captions_url, captions_tbz, reporthook=dl_progress_hook)
+        captions_tar = tarfile.open(captions_tbz, 'r:bz2')
         captions_tar.extractall(flowers_dir)
 
         flowers_url = 'http://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz'
@@ -64,7 +66,7 @@ def download_dataset(data_name):
         urlretrieve(flowers_url, flowers_jpg_tgz,
                     reporthook=dl_progress_hook)
         print('Extracting ' + flowers_jpg_tgz)
-        flowers_jpg_tar = tarfile.open(flowers_jpg_tgz, 'w:gz')
+        flowers_jpg_tar = tarfile.open(flowers_jpg_tgz, 'r:gz')
         flowers_jpg_tar.extractall(flowers_dir)  # archive contains jpg/ folder
 
     elif data_name == 'skipthoughts':
