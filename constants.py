@@ -65,10 +65,13 @@ BETAS = (0.5, 0.999)
 IMAGE_SIZE = 128
 # Size of GloVe Embeddings
 EMBED_DIM = 300
+# Size of hidden dim for LSTM
+HIDDEN_DIM = EMBED_DIM
 # Average or sum of glove vectors
 REDUCE_TYPE = 'mean'
 # Number of embeddings in Glove
-NUM_EMBEDDINGS = 400000
+VOCAB_SIZE = 400000
+
 
 
 # Options for the main model
