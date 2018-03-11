@@ -60,6 +60,9 @@ class TextModel(nn.Module):
 		pass
 
 
+'''
+WGAN-CLS Model
+'''
 
 class Generator(nn.Module):
 	def __init__(self, options):
@@ -134,6 +137,8 @@ class Discriminator(nn.Module):
 		super(Discriminator, self).__init__()
 
 		self.options = options
+		# K value for began model
+		self.began_k = 0
 
 		if constants.PRINT_MODEL_STATUS: print('Creating Discriminator...')
 
@@ -205,5 +210,27 @@ class Discriminator(nn.Module):
 		d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
 
 		d_loss = d_loss1 + d_loss2 + d_loss3
+
+		return d_loss
+
+	# Loss for the BEGAN implementation
+	# L_D = L(y_r) + L(1 - y_w) + k * L(1 - y_f)
+	# L_G = L(y_f)
+	# k = k + lambda_k (gamma * (L(y_r) + L(1 - y_w)) + L(1 - y_f))
+	def began_loss(self, real_img_passed, wrong_img_passed, fake_img_passed, k):
+		# Add one-sided label smoothing to the real images of the discriminator
+		d_loss1 = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - self.options['label_smooth'])
+		d_loss2 = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
+		d_loss3 = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
+
+		# separate into loss from real images (right and wrong) and fake (generated) images
+		d_loss_real = d_loss1 + d_loss2
+		d_loss_fake = d_loss3
+
+		d_loss = d_loss_real + self.began_k * d_loss_fake
+
+		# Update k
+		balance = (self.options['began_gamma'] * d_loss_real + d_loss_fake).data[0]
+		self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
 
 		return d_loss
