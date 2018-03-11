@@ -40,6 +40,7 @@ SAVE_PATH = 'Data/outputs/'
 # If true, prints status of creating model
 PRINT_MODEL_STATUS = True
 
+
 # TRAINING OPTIONS
 # Number of epochs to run the training
 NUM_EPOCHS = 1000
@@ -47,12 +48,6 @@ NUM_EPOCHS = 1000
 BATCH_SIZE = 128
 # How often to save losses
 LOSS_SAVE_IDX = 1
-
-# OPTIMIZER OPTIONS
-# True if optimizer will be stochastic gradient descent
-# False if optimizer will be adam
-D_OPTIMIZER_SGD = True
-
 
 
 # Learning rate for the Optimizer
@@ -74,6 +69,18 @@ VOCAB_SIZE = 400000
 
 
 
+# OPTIMIZER OPTIONS
+# True if optimizer will be stochastic gradient descent
+# False if optimizer will be adam
+D_OPTIMIZER_SGD = True
+
+
+# BEGAN Model Constants
+USE_BEGAN_MODEL = False
+BEGAN_GAMMA = 0.5
+LAMBDA_K = 0.001
+
+
 # Options for the main model
 MAIN_MODEL_OPTIONS = {
     'caption_vec_len':4800,     # Dimensions for the embedded captions vector
@@ -87,4 +94,6 @@ MAIN_MODEL_OPTIONS = {
     'label_smooth':0.1,         # One-sided label smoothing for the real labels
                                 # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
                                 # https://arxiv.org/pdf/1606.03498.pdf
+    'began_gamma':0.5,          # Gamma value for BEGAN model (balance between D and G)
+    'began_lambda_k':0.001,     # Learning rate for k of BEGAN model
     }

@@ -120,7 +120,6 @@ def main():
     discriminator = Discriminator(model_options)
 
 
-
     if torch.cuda.is_available():
         print("CUDA is available")
         generator = generator.cuda()
@@ -204,8 +203,11 @@ def main():
                 fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
 
             # Train discriminator
-            d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            d_loss.backward(retain_graph=True)
+            if constants.USE_BEGAN_MODEL:
+                d_loss = discriminator.began_loss(real_img_passed, wrong_img_passed, fake_img_passed)
+            else:
+                d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
+            d_loss.backward(retain_graph=True) # Since backprop of generator uses same output graph, retain it
             d_optimizer.step()
 
             # Train generator
@@ -215,8 +217,13 @@ def main():
             else:
                 new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
             g_loss = generator.loss(new_fake_img_passed)
-            g_loss.backward(retain_graph=True)
+            g_loss.backward()
             g_optimizer.step()
+
+            # Update k value for BEGAN model
+            if constants.USE_BEGAN_MODEL:
+                balance = constants.BEGAN_GAMMA * original_d_loss
+                k = min(max(k + constants.LAMBDA_K * balance, 0), 1)
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
