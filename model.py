@@ -27,8 +27,11 @@ from glove import Glove
 	num_df : Number of discriminator filters in first layer of discriminator
 	image_channels: Number of channels for the output of the generator and input of discriminator
 					Usually, 3 channels because of RGB.
-	gfc_dim : Dimension of gen untis for for fully connected layer 1024
-	batch_size : Batch Size 64
+	leak : Leak for Leaky ReLU
+	label_smooth : One-sided label smoothing for the real labels
+	use_wgan : Option to use the WGAN model (otherwise, it will be a vanilla GAN)
+    began_gamma : Gamma value for BEGAN model (balance between D and G)
+    began_lambda_k : Learning rate for k of BEGAN model
 '''
 
 class TextModel(nn.Module):
@@ -59,6 +62,9 @@ class TextModel(nn.Module):
 		"""We use generator loss to update embeddings."""
 		pass
 
+
+
+
 class LSTM_Model(nn.Module):
 	def __init__(self, options):
 		super(LSTM_Model, self).__init__()
@@ -68,7 +74,7 @@ class LSTM_Model(nn.Module):
 		self._GloVe = self.glove.get_embeddings()
 		self.embeddings = nn.Embedding(num_embeddings=constants.VOCAB_SIZE, embedding_dim=constants.EMBED_DIM)
 		self.embeddings.weight = nn.Parameter(self._GloVe) # Should this be here?
-		self.embedding.weight.requires_grad = False   # Should this be here? 
+		self.embedding.weight.requires_grad = False   # Should this be here?
 
 		self.biRNN = nn.LSTM(input_size=constants.EMBED_DIM, hidden_size=constants.HIDDEN_DIM,
 						num_layers=1, batch_first=True, bidirectional=False)
@@ -120,6 +126,10 @@ class LSTM_Model(nn.Module):
 	def backward(self):
 		"""We use generator loss to update LSTM embedding weights."""
 		pass
+
+
+
+
 
 class Generator(nn.Module):
 	def __init__(self, options):

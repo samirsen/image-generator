@@ -101,7 +101,6 @@ MAIN_MODEL_OPTIONS = {
     # WGAN Options
     'use_wgan':USE_WGAN_MODEL,      # Option to use the WGAN model (otherwise, it will be a vanilla GAN)
     # BEGAN OPTIONS
-    'began_hidden_embed_size':64,   # The size of the hidden embedding of began discriminator
     'began_gamma':0.5,              # Gamma value for BEGAN model (balance between D and G)
     'began_lambda_k':0.001,         # Learning rate for k of BEGAN model
     }
