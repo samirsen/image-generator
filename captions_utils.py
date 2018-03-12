@@ -25,7 +25,7 @@ def create_caption_dict(data_dir):
             img_file = caption_file[0:11] + ".jpg"
 
             if img_file in image_captions:
-                image_captions[img_file] += [caption for caption in captions in len(cap) > 0][0:5]
+                image_captions[img_file] += [caption for caption in captions in len(caption) > 0][0:5]
 
 	print (len(image_captions))
     pickle.dump( image_captions, open( os.path.join(data_dir,constants.FLOWERS_CAP_DICT), "wb" ) )
