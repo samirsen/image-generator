@@ -31,9 +31,10 @@ def create_caption_dict(data_dir):
     pickle.dump( image_captions, open( os.path.join(data_dir,constants.FLOWERS_CAP_DICT), "wb" ) )
     return image_captions
 
-def load_flowers_capt_dict():
+def load_flowers_capt_dict(data_dir):
     """Use pickle to load the flowers captions"""
-    flowers_capt_dict = pickle.load(open( constants.FLOWERS_CAP_DICT, "rb" ))
+    flowers_dir = os.path.join(data_dir,constants.FLOWERS_CAP_DICT)
+    flowers_capt_dict = pickle.load(open( flowers_dir, "rb" ))
     return flowers_capt_dict
 
 def create_coco_capt_dict(data_dir):
