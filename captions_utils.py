@@ -3,7 +3,10 @@ import time
 import numpy as np
 import constants
 import cPickle as pickle
+# from numba import jit
 
+
+# @jit(nopython=True, parallel=True)
 def create_caption_dict(data_dir):
     import time
 
@@ -40,3 +43,10 @@ def create_coco_capt_dict(data_dir):
 def load_coco_capt_dict():
     coco_capt_dict = pickle.load(open(constants.COCO_CAP_DICT, "rb"))
     return coco_capt_dict
+
+def main():
+    data_dir = 'Data'
+    create_caption_dict(data_dir)
+
+if __name__ == '__main__':
+    main()
