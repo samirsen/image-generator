@@ -182,6 +182,9 @@ def main():
         # Other models use gradient descent
         grad_factor = Variable(torch.Tensor([1]))
 
+    if torch.cuda.is_available():
+        grad_factor = grad_factor.cuda()
+
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
