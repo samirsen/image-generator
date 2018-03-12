@@ -108,16 +108,19 @@ def main():
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
 
-    # NOTE: Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
-    # filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
-    # train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
-    # image_dicts = [train_image_dict, val_image_dict, test_image_dict]
-    # torch.save(image_dicts, "Data/flowers_dicts.torch")
+    # Loads and separates images into train, dev, and test sets
+    if os.path.exists(constants.FLOWERS_DICTS_PATH):
+        image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
+        train_image_dict, val_image_dict, test_image_dict = image_dicts
+        print("Loaded images")
+    else:
+        print("Loading images and separating into train/val/test sets")
+        filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+        train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
+        image_dicts = [train_image_dict, val_image_dict, test_image_dict]
+        torch.save(image_dicts, "Data/flowers_dicts.torch")
 
 
-    image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
-    train_image_dict, val_image_dict, test_image_dict = image_dicts
-    print("Loaded images")
 
     # Creates the model (BEGAN vs GAN/WGAN)
     if constants.USE_BEGAN_MODEL:
@@ -161,20 +164,16 @@ def main():
     print("Added optimizers")
 
 
-    # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
-
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
     # TODO: ADD L1/L2 Regularizaiton
     # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
+    # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
-    # TODO: TRAIN/VAL/TEST SETS
-    # TODO: INCREASE NUM EPOCHS (200?)
 
     # TODO: Add image aug
-    # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
-
+    
 
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):

@@ -39,6 +39,25 @@ VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 Model Constants
 main.py
 '''
+##### MODEL OPTIONS ####
+# Conditional Loss Sensitivity (CLS)
+# Add the option of penalizing GAN for matching image with wrong caption
+USE_CLS = True
+
+# WGAN Model Constants
+# Option to use wgan model
+# False will use vanilla gan
+USE_WGAN_MODEL = False
+
+# BEGAN Model Constants
+# Use the BEGAN model
+# NOTE: This has priority over both WGAN and the vanilla GAN
+USE_BEGAN_MODEL = False
+
+##### END MODEL OPTIONS #####
+
+
+
 FLOWERS_DICTS_PATH = 'Data/flowers_dicts.torch'
 # SAVE PATH FOR MODLE OPTIONS
 SAVE_PATH = 'Data/outputs/'
@@ -55,6 +74,10 @@ BATCH_SIZE = 128
 LOSS_SAVE_IDX = 1
 
 
+# Optimizer options
+# True if optimizer will be stochastic gradient descent
+# False if optimizer will be adam
+D_OPTIMIZER_SGD = True
 # Learning rate for the Optimizer
 LR = 0.0001
 # Beta options for the Adam Optimizer
@@ -74,22 +97,6 @@ VOCAB_SIZE = 400000
 
 
 
-# OPTIMIZER OPTIONS
-# True if optimizer will be stochastic gradient descent
-# False if optimizer will be adam
-D_OPTIMIZER_SGD = True
-
-# WGAN Model Constants
-# Option to use wgan model
-# False will use vanilla gan
-USE_WGAN_MODEL = False
-
-
-# BEGAN Model Constants (BUILT ON TOP OF WGAN)
-# NOTE: This has priority over both WGAN and the vanilla GAN
-USE_BEGAN_MODEL = False
-
-
 # Options for the main model
 MAIN_MODEL_OPTIONS = {
     'caption_vec_len':4800,         # Dimensions for the embedded captions vector
@@ -103,6 +110,8 @@ MAIN_MODEL_OPTIONS = {
     'label_smooth':0.1,             # One-sided label smoothing for the real labels
                                     # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
                                     # https://arxiv.org/pdf/1606.03498.pdf
+    # CLS (Conditional Loss Sensitivity) Options
+    'use_cls':USE_CLS,
     # WGAN Options
     'use_wgan':USE_WGAN_MODEL,      # Option to use the WGAN model (otherwise, it will be a vanilla GAN)
     # BEGAN OPTIONS
