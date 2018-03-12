@@ -46,6 +46,15 @@ class Generator(nn.Module):
 		# Dimensions of the latent vector (concatenate processed embedding vector and noise vector)
 		self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
 
+	    # Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
+	    self.grad_factor = Variable(torch.Tensor([1]))
+		self.neg_grad_factor = Variable(torch.Tensor([-1]))
+		# Add cuda for GPUs if avaiabble
+	    if torch.cuda.is_available():
+	        grad_factor = grad_factor.cuda()
+	        d_grad_factor = d_grad_factor.cuda()
+
+
 		if constants.PRINT_MODEL_STATUS: print('\nCreating Generator...')
 
 		# Projector processes the word embedding before we concatenate embedding with noise
@@ -102,6 +111,7 @@ class Generator(nn.Module):
 	# L_G = L(y_f)
 	def wgan_loss(self, fake_img_passed):
 		g_loss = fake_img_passed.mean()
+		g_loss.backward(self.neg_grad_factor)
 		g_loss = - g_loss
 
 		return g_loss
@@ -111,6 +121,7 @@ class Generator(nn.Module):
 	# L_G = log(y_f)
 	def vanilla_loss(self, fake_img_passed):
 		g_loss = f.binary_cross_entropy(fake_img_passed, torch.ones_like(fake_img_passed))
+		g_loss.backward()
 
 		return g_loss
 
@@ -129,6 +140,14 @@ class Discriminator(nn.Module):
 		super(Discriminator, self).__init__()
 
 		self.options = options
+
+		# Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
+	    self.grad_factor = Variable(torch.Tensor([1]))
+		self.neg_grad_factor = Variable(torch.Tensor([-1]))
+		# Add cuda for GPUs if avaiabble
+	    if torch.cuda.is_available():
+	        grad_factor = grad_factor.cuda()
+	        d_grad_factor = d_grad_factor.cuda()
 
 		if constants.PRINT_MODEL_STATUS: print('Creating Discriminator...')
 
@@ -210,11 +229,15 @@ class Discriminator(nn.Module):
 		d_real_loss = real_img_passed.mean()
 		d_fake_loss = fake_img_passed.mean()
 
+		d_real_loss.backward(self.neg_grad_factor, retain_graph=True)
+		d_fake_loss.backward(self.grad_factor, retain_graph=True)
+
 		d_loss = d_real_loss - d_fake_loss
 
 		# option to use conditional loss sensitivity
 		if self.options['use_cls']:
 			d_wrong_loss = wrong_img_passed.mean()
+			d_wrong_loss.backward(self.grad_factor, retain_graph=True)
 			d_loss -= d_wrong_loss
 
 		return d_loss
@@ -236,6 +259,8 @@ class Discriminator(nn.Module):
 		if self.options['use_cls']:
 			d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
 			d_loss += d_wrong_loss
+
+		d_loss.backward(retain_graph=True)
 
 		return d_loss
 
@@ -339,6 +364,7 @@ class BeganGenerator(nn.Module):
 	# L_G = L(y_f)
 	def loss(self, fake_img, fake_img_recons):
 		g_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
+		g_loss.backward()
 
 		return g_loss
 
@@ -438,6 +464,7 @@ class BeganDiscriminator(nn.Module):
 			d_fake_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
 
 			d_loss = d_real_loss - self.began_k * (d_wrong_loss + d_fake_loss)
+			d_loss.backward(retain_graph=True)
 
 			# Update began k value
 			balance = (self.options['began_gamma'] * d_real_loss + d_wrong_loss + d_fake_loss).data[0]
@@ -449,6 +476,7 @@ class BeganDiscriminator(nn.Module):
 			d_fake_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
 
 			d_loss = d_real_loss - self.began_k * d_fake_loss
+			d_loss.backward(retain_graph=True)
 
 			# Update began k value
 			balance = (self.options['began_gamma'] * d_real_loss + d_fake_loss).data[0]

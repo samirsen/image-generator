@@ -174,17 +174,6 @@ def main():
     # TODO: Add image aug
 
 
-    # Grad factor alters whether we have gradient descent (grad_factor = 1) or gradient ascent (grad_factor = -1)
-    if constants.USE_WGAN_MODEL:
-        # WGAN uses gradient ascent
-        grad_factor = Variable(torch.Tensor([-1]))
-    else:
-        # Other models use gradient descent
-        grad_factor = Variable(torch.Tensor([1]))
-
-    if torch.cuda.is_available():
-        grad_factor = grad_factor.cuda()
-
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
@@ -223,7 +212,7 @@ def main():
                 d_loss = discriminator.began_loss(real_img_passed, wrong_img_passed, fake_img_passed)
             else:
                 d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            d_loss.backward(grad_factor, retain_graph=True) # Since backprop of generator uses same output graph, retain it
+            d_loss.backward(d_grad_factor, retain_graph=True) # Since backprop of generator uses same output graph, retain it
             d_optimizer.step()
 
             # Train generator
