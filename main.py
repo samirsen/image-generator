@@ -86,6 +86,7 @@ def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     return gen_image
 
 
+
 def main():
     print("Starting..")
     output_path = constants.SAVE_PATH
