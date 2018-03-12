@@ -76,14 +76,14 @@ def augment_image_batch(images):
         images[i, :, :, :] = curr
     return images
 
-def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
-    g_text_des = get_text_description(text_caption_dict, batch_keys)
-    g_text_des = Variable(torch.Tensor(g_text_des))
-    if torch.cuda.is_available():
-        g_text_des = g_text_des.cuda()
-    gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
-
-    return gen_image
+# def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
+#     g_text_des = get_text_description(text_caption_dict, batch_keys)
+#     g_text_des = Variable(torch.Tensor(g_text_des))
+#     if torch.cuda.is_available():
+#         g_text_des = g_text_des.cuda()
+#     gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
+#
+#     return gen_image
 
 
 
@@ -130,7 +130,7 @@ def main():
         generator = Generator(model_options)
         discriminator = Discriminator(model_options)
 
-
+    # Put G and D on cuda if GPU available
     if torch.cuda.is_available():
         print("CUDA is available")
         generator = generator.cuda()
@@ -170,10 +170,36 @@ def main():
     # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
-
     # TODO: Add image aug
 
-    
+
+
+    # NOTE: CREATING VARIABLES EARLY, THEN FILL IN LATER
+    noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'], 1, 1)
+    g_text_des = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+    true_img = torch.FloatTensor(constants.BATCHSIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+    true_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+    if constants.USE_CLS:
+        wrong_img = torch.FloatTensor(constants.BATCHSIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+        wrong_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+
+    # Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
+    grad_factor = Variable(torch.Tensor([1]))
+    neg_grad_factor = Variable(torch.Tensor([-1]))
+
+    # Add cuda GPU option
+    if torch.cuda.is_available():
+        noise_vec = noise_vec.cuda()
+        g_text_des = g_text_des.cuda()
+        true_img = true_img.cuda()
+        true_caption = true_caption.cuda()
+        if constants.USE_CLS: wrong_img = wrong_img.cuda()
+
+        grad_factor = grad_factor.cuda()
+        neg_grad_factor = neg_grad_factor.cuda()
+
+
+
 
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
@@ -181,55 +207,62 @@ def main():
         st = time.time()
         for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
-            if torch.cuda.is_available():
-                noise_vec = noise_vec.cuda()
+            curr_batch_size = len(batch_keys)
 
             discriminator.train()
             generator.train()
             # Zero out gradient
             discriminator.zero_grad()
 
-            # Get batch data
-            true_caption = get_text_description(train_captions, batch_keys)
-            true_img = choose_true_image(train_image_dict, batch_keys)
-            wrong_img = choose_wrong_image(train_image_dict, batch_keys)
+            # Save computations for gradient calculations
+            for p in discriminator.parameters():
+                p.requires_grad = True # Need this to be true to update generator as well
 
-            # Run through generator
-            gen_image = generate_step(train_captions, noise_vec, batch_keys, generator)
+            # Fill in tensors with batch data
+            noise_vec.resize_(curr_batch_size).fill_(torch.randn(curr_batch_size, model_options['z_dim'], 1, 1))
+            g_text_des.resize_(curr_batch_size).fill_(get_text_description(train_captions, batch_keys))
+            true_caption.resize_(curr_batch_size).fill_(get_text_description(train_captions, batch_keys))
+            true_img.resize_(curr_batch_size).fill_(choose_true_image(train_image_dict, batch_keys))
+            if constants.USE_CLS: wrong_img.resize_(curr_batch_size).fill_(choose_wrong_image(train_image_dict, batch_keys)))
+
+            # Run through generator (volatile is true to prevent update of gradient)
+            gen_image = generator.forward(Variable(g_text_des, volatile=True), Variable(true_caption, volatile=True))   # Returns tensor variable holding image
 
             # Run through discriminator
-            if torch.cuda.is_available():
-                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
-                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
-                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
-            else:
-                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
-                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
-                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            real_img_passed = discriminator.forward(Variable(true_img), Variable(true_caption))
+            fake_img_passed = discriminator.forward(Variable(gen_image.detach()), Variable(true_caption))
+            if constants.USE_CLS: wrong_img_passed = discriminator.forward(Variable(wrong_img), Variable(true_caption))
+
 
             # Train discriminator
+            # Must calculate the gradients wrt each loss separately (use backward for each loss)
             if constants.USE_BEGAN_MODEL:
-                d_loss = discriminator.began_loss(real_img_passed, wrong_img_passed, fake_img_passed)
+                if constants.USE_CLS:
+                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                else:
+                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
+                d_loss.backward()
             else:
-                d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            d_loss.backward(retain_graph=True) # Since backprop of generator uses same output graph, retain it
+                if constants.USE_CLS:
+                    d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                    d_wrong_loss.backward(neg_grad_factor)
+                else:
+                    d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
+                d_real_loss.backward(grad_factor)
+        		d_fake_loss.backward(neg_grad_factor)
+
             d_optimizer.step()
 
-            # Train generator
+            ##### Train generator #####
+            for p in discriminator.parameters():
+                p.requires_grad = False
+
             generator.zero_grad()
-            if torch.cuda.is_available():
-                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
-            else:
-                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            new_fake_img_passed = discriminator.forward(gen_image, true_caption)
             g_loss = generator.loss(new_fake_img_passed)
             g_loss.backward()
             g_optimizer.step()
 
-            # Update k value for BEGAN model
-            if constants.USE_BEGAN_MODEL:
-                balance = constants.BEGAN_GAMMA * original_d_loss
-                k = min(max(k + constants.LAMBDA_K * balance, 0), 1)
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
@@ -247,38 +280,45 @@ def main():
             print("Saved report")
 
         # Calculate dev set loss
+        # Volatile is true because we are running in inference mode (no need to calculate gradients)
         generator.eval()
         discriminator.eval()
         for i, batch_iter in enumerate(grouper(val_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
-            if torch.cuda.is_available():
-                noise_vec = noise_vec.cuda()
+            curr_batch_size = len(batch_keys)
 
-            # Get batch data
-            true_caption = get_text_description(val_captions, batch_keys)
-            true_img = choose_true_image(val_image_dict, batch_keys)
-            wrong_img = choose_wrong_image(val_image_dict, batch_keys)
+            # Fill tensors with val data
+            noise_vec.resize_(curr_batch_size).fill_(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
+            g_text_des.resize_(curr_batch_size).fill_(get_text_description(val_captions, batch_keys))
+            true_caption.resize_(curr_batch_size).fill_(get_text_description(val_captions, batch_keys))
+            true_img.resize_(curr_batch_size).fill_(choose_true_image(val_image_dict, batch_keys))
+            if constants.USE_CLS: wrong_img.resize_(curr_batch_size).fill_(choose_wrong_image(val_image_dict, batch_keys)))
 
             # Run through generator
-            gen_image = generate_step(val_captions, noise_vec, batch_keys, generator)
+            gen_image = generator.forward(Variable(g_text_des, volatile=True), Variable(noise_vec, volatile=True))   # Returns tensor variable holding image
 
             # Run through discriminator
-            if torch.cuda.is_available():
-                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
-                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)).cuda(), Variable(torch.Tensor(true_caption)).cuda())
-                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
-            else:
-                real_img_passed = discriminator.forward(Variable(torch.Tensor(true_img)), Variable(torch.Tensor(true_caption)))
-                wrong_img_passed = discriminator.forward(Variable(torch.Tensor(wrong_img)), Variable(torch.Tensor(true_caption)))
-                fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+            real_img_passed = discriminator.forward(Variable(true_img, volatile=True), Variable(true_caption, volatile=True))
+            fake_img_passed = discriminator.forward(Variable(gen_image.data, volatile=True), Variable(true_caption, volatile=True))
+            if constants.USE_CLS: wrong_img_passed = discriminator.forward(Variable(wrong_img, volatile=True), Variable(true_caption, volatile=True))
 
-            d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            if torch.cuda.is_available():
-                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)).cuda())
+
+            # Calculate D loss
+            if constants.USE_BEGAN_MODEL:
+                if constants.USE_CLS:
+                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                else:
+                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
             else:
-                new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
+                if constants.USE_CLS:
+                    d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                else:
+                    d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
+
+            # Calculate G loss
+            new_fake_img_passed = discriminator.forward(gen_image, true_caption)
             g_loss = generator.loss(new_fake_img_passed)
+
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['val']['generator'].append((g_loss.data[0], epoch, i))
@@ -286,8 +326,6 @@ def main():
 
         print ('Val G Loss: ', g_loss.data[0])
         print ('Val D Loss: ', d_loss.data[0])
-
-
 
         # Save losses
         torch.save(losses, constants.SAVE_PATH + 'losses')

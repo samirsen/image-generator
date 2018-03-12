@@ -101,10 +101,9 @@ class Generator(nn.Module):
 	# Loss of WGAN with CLS (caption loss sensitivity - makes sure captions match the image)
 	# L_G = L(y_f)
 	def wgan_loss(self, fake_img_passed):
-		g_loss = fake_img_passed.mean()
-		g_loss = - g_loss
+		g_loss = fake_img_passed.mean(0)
 
-		return g_loss
+		return g_loss.view(1)
 
 
 	# Vanilla Discriminator Loss
@@ -206,18 +205,23 @@ class Discriminator(nn.Module):
 	# L_D = L(y_r) - L(y_f)
 	# Loss of WGAN with CLS (caption loss sensitivity - makes sure captions match the image)
 	# L_D = L(y_r) - L(y_w) - L(y_f)
-	def wgan_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
+	def wgan_loss(self, real_img_passed, fake_img_passed, wrong_img_passed):
 		d_real_loss = real_img_passed.mean()
 		d_fake_loss = fake_img_passed.mean()
+
+		d_real_loss.backward(neg_grad_factor)
+		d_fake_loss.backward(grad_factor)
 
 		d_loss = d_real_loss - d_fake_loss
 
 		# option to use conditional loss sensitivity
 		if self.options['use_cls']:
 			d_wrong_loss = wrong_img_passed.mean()
+			d_wrong_loss.backward(grad_factor)
 			d_loss -= d_wrong_loss
+			return d_loss, d_real_loss, d_fake_loss, d_wrong_loss
 
-		return d_loss
+		return d_loss, d_real_loss, d_fake_loss
 
 
 	# Vanilla Discriminator Loss
@@ -225,7 +229,7 @@ class Discriminator(nn.Module):
 	# Loss of Vanilla GAN with CLS
 	# log(1 - y_w) is the caption loss sensitivity CLS (makes sure that captions match the image)
 	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
-	def vanilla_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
+	def vanilla_loss(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
 		# Add one-sided label smoothing to the real images of the discriminator
 		d_real_loss = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - self.options['label_smooth'])
 		d_fake_loss = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
@@ -237,11 +241,12 @@ class Discriminator(nn.Module):
 			d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
 			d_loss += d_wrong_loss
 
+
 		return d_loss
 
 
 	# Overall loss function for discriminator
-	def loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
+	def loss(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
 		if self.options['use_wgan']:
 			return self.wgan_loss(real_img_passed, wrong_img_passed, fake_img_passed)
 		else:
@@ -339,6 +344,7 @@ class BeganGenerator(nn.Module):
 	# L_G = L(y_f)
 	def loss(self, fake_img, fake_img_recons):
 		g_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
+		g_loss.backward()
 
 		return g_loss
 
@@ -431,7 +437,7 @@ class BeganDiscriminator(nn.Module):
 	# L_D = L(y_r) - k * (L(y_w) + L(y_f))
 	# L_G = L(y_f)
 	# k = k + lambda_k * (gamma * L(y_r) + L(y_w) + L(y_f))
-	def loss(self, real_img, real_img_recons, wrong_img, wrong_img_recons, fake_img, fake_img_recons):
+	def loss(self, real_img, real_img_recons, fake_img, fake_img_recons, wrong_img=None, wrong_img_recons=None):
 		if self.options['use_cls']:
 			d_real_loss = torch.mean(torch.abs(real_img_recons - real_img))
 			d_wrong_loss = torch.mean(torch.abs(wrong_img_recons - wrong_img))
