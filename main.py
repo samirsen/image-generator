@@ -160,18 +160,14 @@ def main():
     print("Added optimizers")
 
 
-    # TODO: Do we need to choose all of the images and captions before training or continuously choose new ones?
-
     # TODO: MAKE SURE IMAGES ARE OF DIMENSIONS (BATCHSIZE, CHANNELS, H, W)
     # TODO: ADD L1/L2 Regularizaiton
     # TODO: USE DATALOADER FROM TORCH UTILS!!!!!!!!!
+    # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
     # TODO: ADD PARALLELIZATION
     # TODO: ADD IMAGE PREPROCESSING? DO WE NEED TO SUBTRACT/ADD ANYTHING TO IMAGES
-    # TODO: TRAIN/VAL/TEST SETS
-    # TODO: INCREASE NUM EPOCHS (200?)
 
     # TODO: Add image aug
-    # data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
 
 

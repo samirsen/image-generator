@@ -293,28 +293,40 @@ class Discriminator(nn.Module):
 		return output
 
 
+	# Loss of WGAN
+	# L_D = L(y_r) - L(y_f)
 	# Loss of WGAN with CLS (caption loss sensitivity - makes sure captions match the image)
 	# L_D = L(y_r) - L(y_w) - L(y_f)
 	def wgan_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
 		d_real_loss = real_img_passed.mean()
-		d_wrong_loss = wrong_img_passed.mean()
 		d_fake_loss = fake_img_passed.mean()
 
-		d_loss = d_real_loss - d_wrong_loss - d_fake_loss
+		d_loss = d_real_loss - d_fake_loss
+
+		# option to use conditional loss sensitivity
+		if self.options['use_cls']:
+			d_wrong_loss = wrong_img_passed.mean()
+			d_loss -= d_wrong_loss
 
 		return d_loss
 
 
 	# Vanilla Discriminator Loss
+	# L_D = log(y_r) + log(1 - y_f)
+	# Loss of Vanilla GAN with CLS
 	# log(1 - y_w) is the caption loss sensitivity CLS (makes sure that captions match the image)
 	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
 	def vanilla_loss(self, real_img_passed, wrong_img_passed, fake_img_passed):
 		# Add one-sided label smoothing to the real images of the discriminator
 		d_real_loss = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - self.options['label_smooth'])
-		d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
 		d_fake_loss = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
 
-		d_loss = d_real_loss + d_wrong_loss + d_fake_loss
+		d_loss = d_real_loss + d_fake_loss
+
+		# option to use conditional loss sensitivity
+		if self.options['use_cls']:
+			d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
+			d_loss += d_wrong_loss
 
 		return d_loss
 
@@ -419,7 +431,7 @@ class BeganGenerator(nn.Module):
 
 
 	# Generator Loss
-	# L_G = log(y_f)
+	# L_G = L(y_f)
 	def loss(self, fake_img, fake_img_recons):
 		g_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
 
@@ -509,19 +521,34 @@ class BeganDiscriminator(nn.Module):
 		return output
 
 	# BEGAN Discriminator Loss
+	# L_D = L(y_r) - k * L(y_f)
+	# k = k + lambda_k * (gamma * L(y_r) + L(y_f))
+	# BEGAN Discrminator Loss with CLS
 	# L(y_w) is the caption loss sensitivity CLS (makes sure that captions match the image)
 	# L_D = L(y_r) - k * (L(y_w) + L(y_f))
 	# L_G = L(y_f)
 	# k = k + lambda_k * (gamma * L(y_r) + L(y_w) + L(y_f))
 	def loss(self, real_img, real_img_recons, wrong_img, wrong_img_recons, fake_img, fake_img_recons):
-		d_real_loss = torch.mean(torch.abs(real_img_recons - real_img))
-		d_wrong_loss = torch.mean(torch.abs(wrong_img_recons - wrong_img))
-		d_fake_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
+		if self.options['use_cls']:
+			d_real_loss = torch.mean(torch.abs(real_img_recons - real_img))
+			d_wrong_loss = torch.mean(torch.abs(wrong_img_recons - wrong_img))
+			d_fake_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
 
-		d_loss = d_real_loss - self.began_k * (d_wrong_loss + d_fake_loss)
+			d_loss = d_real_loss - self.began_k * (d_wrong_loss + d_fake_loss)
 
-		# Update began k value
-		balance = (self.options['began_gamma'] * d_real_loss + d_wrong_loss + d_fake_loss).data[0]
-		self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
+			# Update began k value
+			balance = (self.options['began_gamma'] * d_real_loss + d_wrong_loss + d_fake_loss).data[0]
+			self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
+
+		# No CLS option
+		else:
+			d_real_loss = torch.mean(torch.abs(real_img_recons - real_img))
+			d_fake_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
+
+			d_loss = d_real_loss - self.began_k * d_fake_loss
+
+			# Update began k value
+			balance = (self.options['began_gamma'] * d_real_loss + d_fake_loss).data[0]
+			self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
 
 		return d_loss
