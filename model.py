@@ -63,8 +63,6 @@ class TextModel(nn.Module):
 		pass
 
 
-
-
 class LSTM_Model(nn.Module):
 	def __init__(self, options):
 		super(LSTM_Model, self).__init__()
@@ -80,7 +78,6 @@ class LSTM_Model(nn.Module):
 						num_layers=1, batch_first=True, bidirectional=False)
 
 		self.hidden = self.init_hidden(minibatch_size=1)
-
 
 	def init_hidden(self, minibatch_size):
 		# Before we've done anything, we dont have any hidden state.
@@ -126,6 +123,7 @@ class LSTM_Model(nn.Module):
 	def backward(self):
 		"""We use generator loss to update LSTM embedding weights."""
 		pass
+
 
 '''
 WGAN-CLS Model
