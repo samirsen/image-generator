@@ -1,0 +1,23 @@
+Requirements: 
+
+Theano 
+parameterized
+nltk
+pydot-ng
+mkl
+sphinx
+tensorflow
+numpy
+scipy 
+nose 
+h5py 
+matplotlib
+torchvision
+pip install http://download.pytorch.org/whl/cu80/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl 
+
+export THEANO_FLAGS=mode=FAST_RUN,device=cuda,floatX=float32 
+
+import nltk 
+nltk.download(‘punkt’) 
+
+May need to install python-tk library: sudo apt-get install python-tk 

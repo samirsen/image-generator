@@ -9,6 +9,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import constants
 from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
+from text_model import TextModel, LSTM_Model
 import util
 import numpy as np
 import matplotlib.pyplot as plt
