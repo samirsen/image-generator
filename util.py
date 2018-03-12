@@ -37,10 +37,15 @@ def load_dataset_map():
     return dataset_map
 
 
-def load_captions_dict():
+def load_flowers_capt_dict():
     """Use pickle to load the flowers captions"""
     flowers_capt_dict = pickle.load(open( constants.FLOWERS_CAP_DICT, "rb" ))
     return flowers_capt_dict
+
+def load_coco_capt_dict():
+    """Use pickle to load the MSCOCO captions"""
+    coco_capt_dict = pickle.load(open(constants.COCO_CAP_DICT, "rb"))
+    return coco_capt_dict
 
 
 # Adapted from https://github.com/paarthneekhara/text-to-image
