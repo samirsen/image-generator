@@ -212,7 +212,6 @@ def main():
                 d_loss = discriminator.began_loss(real_img_passed, wrong_img_passed, fake_img_passed)
             else:
                 d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            d_loss.backward(d_grad_factor, retain_graph=True) # Since backprop of generator uses same output graph, retain it
             d_optimizer.step()
 
             # Train generator
@@ -222,7 +221,6 @@ def main():
             else:
                 new_fake_img_passed = discriminator.forward(gen_image, Variable(torch.Tensor(true_caption)))
             g_loss = generator.loss(new_fake_img_passed)
-            g_loss.backward(grad_factor)
             g_optimizer.step()
 
             # Update k value for BEGAN model
