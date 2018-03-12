@@ -8,16 +8,16 @@ import cPickle as pickle
 
 # @jit(nopython=True, parallel=True)
 def create_caption_dict(data_dir):
-    
-	img_dir = join(data_dir, constants.DIRECTORY_PATH)
+
+	img_dir = os.path.join(data_dir, constants.DIRECTORY_PATH)
 	image_files = [f for f in os.listdir(img_dir) if 'jpg' in f]
 	print (image_files[300:400])
 	print (len(image_files))
 	image_captions = { img_file : [] for img_file in image_files }
 
-    flowers_caption = join(data_dir, constants.FLOWERS_CAPTION)
+    flowers_caption = os.path.join(data_dir, constants.FLOWERS_CAPTION)
     for i in range(1, constants.FLOWERS_CLASSES + 1):
-        class_dir = join(flowers_caption, 'class_%.5d'%(i))
+        class_dir = os.path.join(flowers_caption, 'class_%.5d'%(i))
         for caption_file in os.listdir(class_dir):
             if 'txt' not in caption_file: continue
             with open(join(class_dir, caption_file)) as f:
