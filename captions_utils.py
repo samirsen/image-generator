@@ -8,8 +8,7 @@ import cPickle as pickle
 
 # @jit(nopython=True, parallel=True)
 def create_caption_dict(data_dir):
-    import time
-
+    
 	img_dir = join(data_dir, constants.DIRECTORY_PATH)
 	image_files = [f for f in os.listdir(img_dir) if 'jpg' in f]
 	print (image_files[300:400])
