@@ -227,15 +227,15 @@ class Discriminator(nn.Module):
 		d_real_loss = real_img_passed.mean()
 		d_fake_loss = fake_img_passed.mean()
 
-		d_real_loss.backward(self.neg_grad_factor, retain_graph=True)
-		d_fake_loss.backward(self.grad_factor, retain_graph=True)
+		d_real_loss.backward(self.neg_grad_factor)
+		d_fake_loss.backward(self.grad_factor)
 
 		d_loss = d_real_loss - d_fake_loss
 
 		# option to use conditional loss sensitivity
 		if self.options['use_cls']:
 			d_wrong_loss = wrong_img_passed.mean()
-			d_wrong_loss.backward(self.grad_factor, retain_graph=True)
+			d_wrong_loss.backward(self.grad_factor)
 			d_loss -= d_wrong_loss
 
 		return d_loss
