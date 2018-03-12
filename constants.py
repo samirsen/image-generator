@@ -39,13 +39,7 @@ VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
 Model Constants
 main.py
 '''
-# IMPORTANT MODEL TYPE OPTIONS!!!!!!!
-
-# OPTIMIZER OPTIONS
-# True if optimizer will be stochastic gradient descent
-# False if optimizer will be adam
-D_OPTIMIZER_SGD = True
-
+##### MODEL OPTIONS ####
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
 USE_CLS = True
@@ -55,9 +49,12 @@ USE_CLS = True
 # False will use vanilla gan
 USE_WGAN_MODEL = False
 
-# BEGAN Model Constants (BUILT ON TOP OF WGAN)
+# BEGAN Model Constants
+# Use the BEGAN model
 # NOTE: This has priority over both WGAN and the vanilla GAN
 USE_BEGAN_MODEL = False
+
+##### END MODEL OPTIONS #####
 
 
 
@@ -77,6 +74,10 @@ BATCH_SIZE = 128
 LOSS_SAVE_IDX = 1
 
 
+# Optimizer options
+# True if optimizer will be stochastic gradient descent
+# False if optimizer will be adam
+D_OPTIMIZER_SGD = True
 # Learning rate for the Optimizer
 LR = 0.0001
 # Beta options for the Adam Optimizer

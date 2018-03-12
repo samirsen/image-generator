@@ -15,7 +15,6 @@ import constants
 import collections
 import functools
 from util import *
-from glove import Glove
 
 '''
 	OPTIONS
@@ -33,6 +32,8 @@ from glove import Glove
     began_gamma : Gamma value for BEGAN model (balance between D and G)
     began_lambda_k : Learning rate for k of BEGAN model
 '''
+
+
 
 '''
 WGAN-CLS Model

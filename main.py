@@ -108,16 +108,19 @@ def main():
     # Load the caption text vectors
     train_captions, val_captions, test_captions = util.load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME, dataset_map)
 
-    # NOTE: Uncomment to load image_dicts from original files, images saved to Data/flowers_dicts.torch to reduce resizing overhead
-    # filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
-    # train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
-    # image_dicts = [train_image_dict, val_image_dict, test_image_dict]
-    # torch.save(image_dicts, "Data/flowers_dicts.torch")
+    # Loads and separates images into train, dev, and test sets
+    if os.path.exists(constants.FLOWERS_DICTS_PATH):
+        image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
+        train_image_dict, val_image_dict, test_image_dict = image_dicts
+        print("Loaded images")
+    else:
+        print("Loading images and separating into train/val/test sets")
+        filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+        train_image_dict, val_image_dict, test_image_dict = util.load_images('Data/' + constants.DIRECTORY_PATH, filenames, dataset_map)
+        image_dicts = [train_image_dict, val_image_dict, test_image_dict]
+        torch.save(image_dicts, "Data/flowers_dicts.torch")
 
 
-    image_dicts = torch.load(constants.FLOWERS_DICTS_PATH)
-    train_image_dict, val_image_dict, test_image_dict = image_dicts
-    print("Loaded images")
 
     # Creates the model (BEGAN vs GAN/WGAN)
     if constants.USE_BEGAN_MODEL:
