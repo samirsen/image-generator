@@ -47,12 +47,12 @@ class Generator(nn.Module):
 		self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
 
 	    # Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
-	    self.grad_factor = Variable(torch.Tensor([1]))
+		self.grad_factor = Variable(torch.Tensor([1]))
 		self.neg_grad_factor = Variable(torch.Tensor([-1]))
 		# Add cuda for GPUs if avaiabble
-	    if torch.cuda.is_available():
-	        grad_factor = grad_factor.cuda()
-	        d_grad_factor = d_grad_factor.cuda()
+		if torch.cuda.is_available():
+			grad_factor = grad_factor.cuda()
+			d_grad_factor = d_grad_factor.cuda()
 
 
 		if constants.PRINT_MODEL_STATUS: print('\nCreating Generator...')
@@ -142,12 +142,12 @@ class Discriminator(nn.Module):
 		self.options = options
 
 		# Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
-	    self.grad_factor = Variable(torch.Tensor([1]))
+		self.grad_factor = Variable(torch.Tensor([1]))
 		self.neg_grad_factor = Variable(torch.Tensor([-1]))
 		# Add cuda for GPUs if avaiabble
-	    if torch.cuda.is_available():
-	        grad_factor = grad_factor.cuda()
-	        d_grad_factor = d_grad_factor.cuda()
+		if torch.cuda.is_available():
+			grad_factor = grad_factor.cuda()
+			d_grad_factor = d_grad_factor.cuda()
 
 		if constants.PRINT_MODEL_STATUS: print('Creating Discriminator...')
 
