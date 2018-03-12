@@ -78,7 +78,7 @@ def augment_image_batch(images):
 
 def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
     g_text_des = get_text_description(text_caption_dict, batch_keys)
-    g_text_des = Variable(torch.Tensor(g_text_des), requires_grad=True)
+    g_text_des = Variable(torch.Tensor(g_text_des))
     if torch.cuda.is_available():
         g_text_des = g_text_des.cuda()
     gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
@@ -223,7 +223,7 @@ def main():
                 d_loss = discriminator.began_loss(real_img_passed, wrong_img_passed, fake_img_passed)
             else:
                 d_loss = discriminator.loss(real_img_passed, wrong_img_passed, fake_img_passed)
-            d_loss.backward(grad_factor)
+            d_loss.backward(grad_factor, retain_graph=True) # Since backprop of generator uses same output graph, retain it
             d_optimizer.step()
 
             # Train generator
