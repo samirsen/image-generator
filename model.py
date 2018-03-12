@@ -102,6 +102,7 @@ class Generator(nn.Module):
 	# L_G = L(y_f)
 	def wgan_loss(self, fake_img_passed):
 		g_loss = fake_img_passed.mean()
+		g_loss = - g_loss
 
 		return g_loss
 
