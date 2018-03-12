@@ -68,7 +68,7 @@ class LSTM_Model(nn.Module):
 		self._GloVe = self.glove.get_embeddings()
 		self.embeddings = nn.Embedding(num_embeddings=constants.VOCAB_SIZE, embedding_dim=constants.EMBED_DIM)
 		self.embeddings.weight = nn.Parameter(self._GloVe) # Should this be here?
-		self.embedding.weight.requires_grad = False   # Should this be here? 
+		self.embedding.weight.requires_grad = False   # Should this be here?
 
 		self.biRNN = nn.LSTM(input_size=constants.EMBED_DIM, hidden_size=constants.HIDDEN_DIM,
 						num_layers=1, batch_first=True, bidirectional=False)
@@ -124,7 +124,6 @@ class LSTM_Model(nn.Module):
 '''
 WGAN-CLS Model
 '''
-
 class Generator(nn.Module):
 	def __init__(self, options):
 		super(Generator, self).__init__()

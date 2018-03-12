@@ -10,7 +10,6 @@ captions and take average of words for a
 # import numpy as np
 # import constants
 
-
 class Glove:
     def __init__(self):
         # Gather GloVe 300 dimensional word embeddings
