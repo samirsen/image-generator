@@ -327,9 +327,6 @@ class Discriminator(nn.Module):
 			return self.vanilla_loss(real_img_passed, wrong_img_passed, fake_img_passed)
 
 
-
-
-
 '''
 BEGAN Model
 Based on paper
@@ -417,15 +414,12 @@ class BeganGenerator(nn.Module):
 
 		return output
 
-
 	# Generator Loss
 	# L_G = log(y_f)
 	def loss(self, fake_img, fake_img_recons):
 		g_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
 
 		return g_loss
-
-
 
 
 class BeganDiscriminator(nn.Module):

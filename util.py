@@ -10,6 +10,7 @@ import skimage.transform
 from scipy.io import loadmat
 import glob
 import os
+import cPickle as pickle
 
 # Loads a map from image file names to 'test', 'train', or 'val'
 # Used in other functions to split data
@@ -34,6 +35,12 @@ def load_dataset_map():
         else:
             print("Invalid ID!")
     return dataset_map
+
+
+def load_captions_dict():
+    """Use pickle to load the flowers captions"""
+    flowers_capt_dict = pickle.load(open( constants.FLOWERS_CAP_DICT, "rb" ))
+    return flowers_capt_dict
 
 
 # Adapted from https://github.com/paarthneekhara/text-to-image
@@ -103,4 +110,4 @@ def preprocess(batch_input):
         flatten.extend(ex)
         index += len(ex)
 
-    return flatten, offsets 
+    return flatten, offsets

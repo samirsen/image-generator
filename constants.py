@@ -20,6 +20,12 @@ data_loader.py constants
 ENTIRE_DATASET = 'flowers/jpg/'
 # A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
 SMALL_DATASET = 'flowers/smalljpg/'
+# Directory the Flowers captions are located
+FLOWERS_CAPTION = 'flowers/text_c10'
+# Flowers dictionary save file
+FLOWERS_CAP_DICT = "flowers_captions.p"
+# Number of flower classes in the dataset
+FLOWERS_CLASSES = 102
 
 # Choose which directory holds the images you want for the flowers
 # NOTE: UPDATE THIS ONE FOR WHICH DATA SET YOU WANT
