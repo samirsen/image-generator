@@ -175,7 +175,7 @@ def main():
 
 
     # Grad factor alters whether we have gradient descent (grad_factor = 1) or gradient ascent (grad_factor = -1)
-    if constants.USE_WGAN_MODEL
+    if constants.USE_WGAN_MODEL:
         # WGAN uses gradient ascent
         grad_factor = Variable(torch.Tensor([-1]))
     else:
