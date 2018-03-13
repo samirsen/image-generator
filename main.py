@@ -296,7 +296,11 @@ def main():
             gen_image = generator.forward(Variable(g_text_des), Variable(noise_vec))
             new_fake_img_passed = discriminator.forward(gen_image, Variable(true_caption))
 
-            g_loss = generator.calc_grad_g(new_fake_img_passed)
+            if constants.USE_MODEL == 'began':
+                g_loss = generator.calc_grad_g(gen_image, new_fake_img_passed)
+            else:
+                g_loss = generator.calc_grad_g(new_fake_img_passed)
+
             g_optimizer.step()
 
             # learning rate decay
@@ -367,9 +371,9 @@ def main():
             # Calculate D loss
             if constants.USE_MODEL == 'began':
                 if constants.USE_CLS:
-                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                    d_loss = discriminator.loss(Variable(true_img), real_img_passed, gen_image, fake_img_passed, Variable(wrong_img), wrong_img_passed)
                 else:
-                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
+                    d_loss = discriminator.loss(Variable(true_img), real_img_passed, gen_image, fake_img_passed)
             elif constants.USE_MODEL == 'wgan':
                 if constants.USE_CLS:
                     d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
@@ -383,6 +387,10 @@ def main():
                     d_loss = discriminator.loss(real_img_passed, fake_img_passed)
 
             # Calculate G loss
+            if constants.USE_MODEL == 'began':
+                g_loss = generator.loss(gen_image, new_fake_img_passed)
+            else:
+                g_loss = generator.loss(new_fake_img_passed)
             g_loss = generator.loss(fake_img_passed)
 
 
