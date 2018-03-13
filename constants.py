@@ -47,15 +47,9 @@ REGEN_IMAGE = True
 # Add the option of penalizing GAN for matching image with wrong caption
 USE_CLS = True
 
-# WGAN Model Constants
-# Option to use wgan model
-# False will use vanilla gan
-USE_WGAN_MODEL = False
-
-# BEGAN Model Constants
-# Use the BEGAN model
-# NOTE: This has priority over both WGAN and the vanilla GAN
-USE_BEGAN_MODEL = False
+# The different models to use
+# 'dcgan', 'wgan', 'began'
+USE_MODEL = 'dcgan'
 
 ##### END MODEL OPTIONS #####
 
@@ -80,11 +74,13 @@ LOSS_SAVE_IDX = 1
 # Optimizer options
 # True if optimizer will be stochastic gradient descent
 # False if optimizer will be adam
-D_OPTIMIZER_SGD = True
+D_OPTIMIZER_SGD = False
 # Learning rate for the Optimizer
 LR = 0.0001
 # Beta options for the Adam Optimizer
 BETAS = (0.5, 0.999)
+# The learning decays after this many iterations
+LR_DECAY_EVERY = 3000
 
 
 # Size for each dimension of the image
@@ -102,6 +98,7 @@ VOCAB_SIZE = 400000
 
 # Options for the main model
 MAIN_MODEL_OPTIONS = {
+    'verbose':PRINT_MODEL_STATUS,   # Prints out info about the model
     'caption_vec_len':4800,         # Dimensions for the embedded captions vector
     't_dim':256,                    # Dimensions for the text vector input into the GAN
     'z_dim':100,                    # Dimensions for the noise vector input into the GAN
@@ -116,7 +113,7 @@ MAIN_MODEL_OPTIONS = {
     # CLS (Conditional Loss Sensitivity) Options
     'use_cls':USE_CLS,
     # WGAN Options
-    'use_wgan':USE_WGAN_MODEL,      # Option to use the WGAN model (otherwise, it will be a vanilla GAN)
+    'wgan_d_iter':5,                # Number of times to train D before training G
     # BEGAN OPTIONS
     'began_gamma':0.5,              # Gamma value for BEGAN model (balance between D and G)
     'began_lambda_k':0.001,         # Learning rate for k of BEGAN model

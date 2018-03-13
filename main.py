@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import constants
-from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
+from model import *
 from text_model import TextModel, LSTM_Model
 import util
 import numpy as np
@@ -77,14 +77,14 @@ def augment_image_batch(images):
         images[i, :, :, :] = curr
     return images
 
-# def generate_step(text_caption_dict, noise_vec, batch_keys, generator):
-#     g_text_des = get_text_description(text_caption_dict, batch_keys)
-#     g_text_des = Variable(torch.Tensor(g_text_des))
-#     if torch.cuda.is_available():
-#         g_text_des = g_text_des.cuda()
-#     gen_image = generator.forward(g_text_des, noise_vec)   # Returns tensor variable holding image
-#
-#     return gen_image
+
+# https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/began.py
+def adjust_learning_rate(optimizer, niter):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = constants.LR * (0.95 ** (niter // constants.LR_DECAY_EVERY))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return optimizer
 
 
 
@@ -122,11 +122,13 @@ def main():
         torch.save(image_dicts, "Data/flowers_dicts.torch")
 
 
-
-    # Creates the model (BEGAN vs GAN/WGAN)
-    if constants.USE_BEGAN_MODEL:
+    # Creates the model
+    if constants.USE_MODEL == 'began':
         generator = BeganGenerator(model_options)
         discriminator = BeganDiscriminator(model_options)
+    elif constants.USE_MODEL == 'wgan':
+        generator = WGanGenerator(model_options)
+        discriminator = WGanDiscriminator(model_options)
     else:
         generator = Generator(model_options)
         discriminator = Discriminator(model_options)
@@ -184,10 +186,6 @@ def main():
         wrong_img = torch.FloatTensor(constants.BATCH_SIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
         wrong_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
 
-    # Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
-    grad_factor = Variable(torch.Tensor([1]))
-    neg_grad_factor = Variable(torch.Tensor([-1]))
-
     # Add cuda GPU option
     if torch.cuda.is_available():
         noise_vec = noise_vec.cuda()
@@ -196,15 +194,22 @@ def main():
         true_caption = true_caption.cuda()
         if constants.USE_CLS: wrong_img = wrong_img.cuda()
 
-        grad_factor = grad_factor.cuda()
-        neg_grad_factor = neg_grad_factor.cuda()
-
-
+    # Number of total iterations
+    num_iterations = 0
 
     # Loop over dataset N times
     for epoch in range(new_epoch, constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
         st = time.time()
+
+        # WGAN trains D number of times more than G
+        curr_count = 0
+        if constants.USE_MODEL == 'wgan':
+            if num_iterations < 25 or num_iterations % 500 == 0:
+                d_iters = 100
+            else:
+                d_iters = model_options['wgan_d_iter']
+
         for i, batch_iter in enumerate(grouper(train_captions.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
             curr_batch_size = len(batch_keys)
@@ -251,31 +256,23 @@ def main():
 
 
             ##### Train Discriminator #####
-            # Must calculate the gradients wrt each loss separately (use backward for each loss)
-            if constants.USE_BEGAN_MODEL:
-                if constants.USE_CLS:
-                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
-                else:
-                    d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
-                d_loss.backward()
-            elif constants.USE_WGAN_MODEL:
-                if constants.USE_CLS:
-                    d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
-                    d_wrong_loss.backward(grad_factor)
-                else:
-                    d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
-                d_real_loss.backward(neg_grad_factor)
-                d_fake_loss.backward(grad_factor)
-            # Vanilla Model
+            # calc_grad_d calcs gradients and steps backward
+            if constants.USE_CLS:
+                d_loss = discriminator.calc_grad_d(real_img_passed, fake_img_passed, wrong_img_passed)
             else:
-                if constants.USE_CLS:
-                    d_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
-                else:
-                    d_loss = discriminator.loss(real_img_passed, fake_img_passed)
-                d_loss.backward()
-
+                d_loss = discriminator.calc_grad_d(real_img_passed, fake_img_passed)
 
             d_optimizer.step()
+
+            # WGAN trains D number of times more than G
+            if constants.USE_MODEL == 'wgan':
+                if curr_count < d_iters and i < (len(train_captions) / constants.BATCH_SIZE) - 1:
+                    curr_count += 1
+                    num_iterations += 1
+                    continue
+                else:
+                    # Update G after d iterations or after reaching end of epoch
+                    curr_count = 0
 
             ##### Train Generator #####
             for p in discriminator.parameters():
@@ -291,19 +288,20 @@ def main():
                 noise_vec.resize_as_(noise_batch).copy_(noise_batch)
 
             gen_image = generator.forward(Variable(g_text_des), Variable(noise_vec))
-
             new_fake_img_passed = discriminator.forward(gen_image, Variable(true_caption))
-            g_loss = generator.loss(new_fake_img_passed)
-            if constants.USE_WGAN_MODEL:
-                g_loss.backward(neg_grad_factor)
-            else:
-                g_loss.backward()
+
+            g_loss = generator.calc_grad_g(new_fake_img_passed)
             g_optimizer.step()
 
+            # learning rate decay
+            if constants.USE_MODEL == 'began':
+                g_optimizer = adjust_learning_rate(g_optimizer, num_iterations)
+                d_optimizer = adjust_learning_rate(d_optimizer, num_iterations)
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
+            num_iterations += 1
 
         print ('Training G Loss: ', g_loss.data[0])
         print ('Training D Loss: ', d_loss.data[0])
@@ -361,12 +359,12 @@ def main():
             if constants.USE_CLS: wrong_img_passed = discriminator.forward(Variable(wrong_img, volatile=True), Variable(true_caption, volatile=True))
 
             # Calculate D loss
-            if constants.USE_BEGAN_MODEL:
+            if constants.USE_MODEL == 'began':
                 if constants.USE_CLS:
                     d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
                 else:
                     d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
-            elif constants.USE_WGAN_MODEL:
+            elif constants.USE_MODEL == 'wgan':
                 if constants.USE_CLS:
                     d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
                 else:
