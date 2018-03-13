@@ -589,7 +589,7 @@ class BeganDiscriminator(nn.Module):
 		replicated_embed = projected_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
 		latent_vec = torch.cat([images_intermediate, replicated_embed], 1)
 		output = self.discriminator_output(latent_vec)
-		
+
 		return output
 
 
@@ -629,9 +629,9 @@ class BeganDiscriminator(nn.Module):
 	# Calculates the gradients and returns the loss
 	def calc_grad_d(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
 		if self.options['use_cls']:
-			d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
+			d_loss = self.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
 		else:
-			d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
+			d_loss = self.began_loss(real_img_passed, fake_img_passed)
 
 		d_loss.backward()
 
