@@ -258,7 +258,7 @@ def main():
                 else:
                     d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
                 d_loss.backward()
-            else:
+            elif constants.USE_WGAN_MODEL:
                 if constants.USE_CLS:
                     d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
                     d_wrong_loss.backward(grad_factor)
@@ -266,6 +266,14 @@ def main():
                     d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
                 d_real_loss.backward(neg_grad_factor)
                 d_fake_loss.backward(grad_factor)
+            # Vanilla Model
+            else:
+                if constants.USE_CLS:
+                    d_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                else:
+                    d_loss = discriminator.loss(real_img_passed, fake_img_passed)
+                d_loss.backward()
+
 
             d_optimizer.step()
 
@@ -286,7 +294,10 @@ def main():
 
             new_fake_img_passed = discriminator.forward(gen_image, Variable(true_caption))
             g_loss = generator.loss(new_fake_img_passed)
-            g_loss.backward(neg_grad_factor)
+            if constants.USE_WGAN_MODEL:
+                g_loss.backward(neg_grad_factor)
+            else:
+                g_loss.backward()
             g_optimizer.step()
 
 
@@ -355,12 +366,17 @@ def main():
                     d_loss = discriminator.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
                 else:
                     d_loss = discriminator.began_loss(real_img_passed, fake_img_passed)
-            else:
+            elif constants.USE_WGAN_MODEL:
                 if constants.USE_CLS:
                     d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
                 else:
                     d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
-
+            # Vanilla Model
+            else:
+                if constants.USE_CLS:
+                    d_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
+                else:
+                    d_loss = discriminator.loss(real_img_passed, fake_img_passed)
 
             # Calculate G loss
             g_loss = generator.loss(fake_img_passed)
