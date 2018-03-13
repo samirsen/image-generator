@@ -391,7 +391,6 @@ def main():
                 g_loss = generator.loss(gen_image, fake_img_passed)
             else:
                 g_loss = generator.loss(fake_img_passed)
-            g_loss = generator.loss(fake_img_passed)
 
 
             if i % constants.LOSS_SAVE_IDX == 0:
