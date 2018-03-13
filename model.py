@@ -508,8 +508,8 @@ class BeganGenerator(nn.Module):
 		return g_loss
 
 	# Calculates the grad of g
-	def calc_grad_g(self, new_fake_img_passed):
-		g_loss = self.loss(new_fake_img_passed)
+	def calc_grad_g(self, fake_img, fake_img_recons):
+		g_loss = self.loss(fake_img, fake_img_recons)
 
 		return g_loss
 
@@ -627,11 +627,11 @@ class BeganDiscriminator(nn.Module):
 		return d_loss
 
 	# Calculates the gradients and returns the loss
-	def calc_grad_d(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
+	def calc_grad_d(self, real_img, real_img_recons, fake_img, fake_img_recons, wrong_img=None, wrong_img_recons=None):
 		if self.options['use_cls']:
-			d_loss = self.loss(real_img_passed, fake_img_passed, wrong_img_passed)
+			d_loss = self.loss(real_img, real_img_recons, fake_img, fake_img_recons, wrong_img, wrong_img_recons)
 		else:
-			d_loss = self.loss(real_img_passed, fake_img_passed)
+			d_loss = self.loss(real_img, real_img_recons, fake_img, fake_img_recons)
 
 		d_loss.backward()
 
