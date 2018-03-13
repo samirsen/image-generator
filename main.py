@@ -178,10 +178,10 @@ def main():
     # NOTE: CREATING VARIABLES EARLY, THEN FILL IN LATER
     noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'], 1, 1)
     g_text_des = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
-    true_img = torch.FloatTensor(constants.BATCHSIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+    true_img = torch.FloatTensor(constants.BATCH_SIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
     true_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
     if constants.USE_CLS:
-        wrong_img = torch.FloatTensor(constants.BATCHSIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+        wrong_img = torch.FloatTensor(constants.BATCH_SIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
         wrong_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
 
     # Grad factor alters whether we step in positive direction (grad_factor = 1) or negative (neg_grad_factor = -1)
@@ -198,7 +198,6 @@ def main():
 
         grad_factor = grad_factor.cuda()
         neg_grad_factor = neg_grad_factor.cuda()
-
 
 
 
@@ -219,23 +218,39 @@ def main():
             for p in discriminator.parameters():
                 p.requires_grad = True # Need this to be true to update generator as well
 
-            # Fill in tensors with batch data
-            noise_vec.resize_(curr_batch_size).fill_(torch.randn(curr_batch_size, model_options['z_dim'], 1, 1))
-            g_text_des.resize_(curr_batch_size).fill_(get_text_description(train_captions, batch_keys))
-            true_caption.resize_(curr_batch_size).fill_(get_text_description(train_captions, batch_keys))
-            true_img.resize_(curr_batch_size).fill_(choose_true_image(train_image_dict, batch_keys))
-            if constants.USE_CLS: wrong_img.resize_(curr_batch_size).fill_(choose_wrong_image(train_image_dict, batch_keys)))
+            # Gather batch data
+            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+            g_text_des_batch = torch.Tensor(get_text_description(train_captions, batch_keys))
+            true_caption_batch = torch.Tensor(get_text_description(train_captions, batch_keys))
+            true_img_batch = torch.Tensor(choose_true_image(train_image_dict, batch_keys))
+            if constants.USE_CLS:
+                wrong_img_batch = torch.Tensor(choose_wrong_image(train_image_dict, batch_keys))
+            if torch.cuda.is_available():
+                noise_batch = noise_batch.cuda()
+                g_text_des_batch = g_text_des_batch.cuda()
+                true_caption_batch = true_caption_batch.cuda()
+                true_img_batch = true_img_batch.cuda()
+                if constants.USE_CLS:
+                    wrong_img_batch = wrong_img_batch.cuda()
 
-            # Run through generator (volatile is true to prevent update of gradient)
-            gen_image = generator.forward(Variable(g_text_des, volatile=True), Variable(true_caption, volatile=True))   # Returns tensor variable holding image
+            # Fill in tensors with batch data
+            noise_vec.resize_as_(noise_batch).copy_(noise_batch)
+            g_text_des.resize_as_(g_text_des_batch).copy_(g_text_des_batch)
+            true_caption.resize_as_(g_text_des_batch).copy_(g_text_des_batch)
+            true_img.resize_as_(true_img_batch).copy_(true_img_batch)
+            if constants.USE_CLS:
+                wrong_img.resize_as_(wrong_img_batch).copy_(wrong_img_batch)
+
+            # Run through generator
+            gen_image = generator.forward(Variable(g_text_des), Variable(noise_vec))   # Returns tensor variable holding image
 
             # Run through discriminator
             real_img_passed = discriminator.forward(Variable(true_img), Variable(true_caption))
-            fake_img_passed = discriminator.forward(Variable(gen_image.detach()), Variable(true_caption))
+            fake_img_passed = discriminator.forward(gen_image.detach(), Variable(true_caption))
             if constants.USE_CLS: wrong_img_passed = discriminator.forward(Variable(wrong_img), Variable(true_caption))
 
 
-            # Train discriminator
+            ##### Train Discriminator #####
             # Must calculate the gradients wrt each loss separately (use backward for each loss)
             if constants.USE_BEGAN_MODEL:
                 if constants.USE_CLS:
@@ -246,22 +261,32 @@ def main():
             else:
                 if constants.USE_CLS:
                     d_loss, d_real_loss, d_fake_loss, d_wrong_loss = discriminator.loss(real_img_passed, fake_img_passed, wrong_img_passed)
-                    d_wrong_loss.backward(neg_grad_factor)
+                    d_wrong_loss.backward(grad_factor)
                 else:
                     d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
-                d_real_loss.backward(grad_factor)
-        		d_fake_loss.backward(neg_grad_factor)
+                d_real_loss.backward(neg_grad_factor)
+                d_fake_loss.backward(grad_factor)
 
             d_optimizer.step()
 
-            ##### Train generator #####
+            ##### Train Generator #####
             for p in discriminator.parameters():
                 p.requires_grad = False
 
             generator.zero_grad()
-            new_fake_img_passed = discriminator.forward(gen_image, true_caption)
+
+            # Generate image again if you want to
+            if constants.REGEN_IMAGE:
+                noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+                if torch.cuda.is_available():
+                    noise_batch = noise_batch.cuda()
+                noise_vec.resize_as_(noise_batch).copy_(noise_batch)
+
+            gen_image = generator.forward(Variable(g_text_des), Variable(noise_vec))
+
+            new_fake_img_passed = discriminator.forward(gen_image, Variable(true_caption))
             g_loss = generator.loss(new_fake_img_passed)
-            g_loss.backward()
+            g_loss.backward(neg_grad_factor)
             g_optimizer.step()
 
 
@@ -280,6 +305,10 @@ def main():
                 f.write("Time per epoch: " + str(epoch_time))
             print("Saved report")
 
+
+        '''
+        DEV SET
+        '''
         # Calculate dev set loss
         # Volatile is true because we are running in inference mode (no need to calculate gradients)
         generator.eval()
@@ -288,21 +317,37 @@ def main():
             batch_keys = [x for x in batch_iter if x is not None]
             curr_batch_size = len(batch_keys)
 
-            # Fill tensors with val data
-            noise_vec.resize_(curr_batch_size).fill_(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
-            g_text_des.resize_(curr_batch_size).fill_(get_text_description(val_captions, batch_keys))
-            true_caption.resize_(curr_batch_size).fill_(get_text_description(val_captions, batch_keys))
-            true_img.resize_(curr_batch_size).fill_(choose_true_image(val_image_dict, batch_keys))
-            if constants.USE_CLS: wrong_img.resize_(curr_batch_size).fill_(choose_wrong_image(val_image_dict, batch_keys)))
+            # Gather batch data
+            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+            g_text_des_batch = torch.Tensor(get_text_description(val_captions, batch_keys))
+            true_caption_batch = torch.Tensor(get_text_description(val_captions, batch_keys))
+            true_img_batch = torch.Tensor(choose_true_image(val_image_dict, batch_keys))
+            if constants.USE_CLS:
+                wrong_img_batch = torch.Tensor(choose_wrong_image(val_image_dict, batch_keys))
+            if torch.cuda.is_available():
+                noise_batch = noise_batch.cuda()
+                g_text_des_batch = g_text_des_batch.cuda()
+                true_caption_batch = true_caption_batch.cuda()
+                true_img_batch = true_img_batch.cuda()
+                if constants.USE_CLS:
+                    wrong_img_batch = wrong_img_batch.cuda()
+
+            # Fill in tensors with batch data
+            noise_vec.resize_as_(noise_batch).copy_(noise_batch)
+            g_text_des.resize_as_(g_text_des_batch).copy_(g_text_des_batch)
+            true_caption.resize_as_(g_text_des_batch).copy_(g_text_des_batch)
+            true_img.resize_as_(true_img_batch).copy_(true_img_batch)
+            if constants.USE_CLS:
+                wrong_img.resize_as_(wrong_img_batch).copy_(wrong_img_batch)
+
 
             # Run through generator
             gen_image = generator.forward(Variable(g_text_des, volatile=True), Variable(noise_vec, volatile=True))   # Returns tensor variable holding image
 
             # Run through discriminator
             real_img_passed = discriminator.forward(Variable(true_img, volatile=True), Variable(true_caption, volatile=True))
-            fake_img_passed = discriminator.forward(Variable(gen_image.data, volatile=True), Variable(true_caption, volatile=True))
+            fake_img_passed = discriminator.forward(gen_image.detach(), Variable(true_caption, volatile=True))
             if constants.USE_CLS: wrong_img_passed = discriminator.forward(Variable(wrong_img, volatile=True), Variable(true_caption, volatile=True))
-
 
             # Calculate D loss
             if constants.USE_BEGAN_MODEL:
@@ -316,9 +361,9 @@ def main():
                 else:
                     d_loss, d_real_loss, d_fake_loss = discriminator.loss(real_img_passed, fake_img_passed)
 
+
             # Calculate G loss
-            new_fake_img_passed = discriminator.forward(gen_image, true_caption)
-            g_loss = generator.loss(new_fake_img_passed)
+            g_loss = generator.loss(fake_img_passed)
 
 
             if i % constants.LOSS_SAVE_IDX == 0:

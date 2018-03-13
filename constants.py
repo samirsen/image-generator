@@ -40,6 +40,9 @@ Model Constants
 main.py
 '''
 ##### MODEL OPTIONS ####
+# Generate another image for the training of the G (don't use the one from D)
+# Most models do regenerate image (however, we did not for our baseline)
+REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
 USE_CLS = True

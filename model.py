@@ -101,9 +101,9 @@ class Generator(nn.Module):
 	# Loss of WGAN with CLS (caption loss sensitivity - makes sure captions match the image)
 	# L_G = L(y_f)
 	def wgan_loss(self, fake_img_passed):
-		g_loss = fake_img_passed.mean(0)
+		g_loss = fake_img_passed.mean()
 
-		return g_loss.view(1)
+		return g_loss
 
 
 	# Vanilla Discriminator Loss
@@ -209,15 +209,11 @@ class Discriminator(nn.Module):
 		d_real_loss = real_img_passed.mean()
 		d_fake_loss = fake_img_passed.mean()
 
-		d_real_loss.backward(neg_grad_factor)
-		d_fake_loss.backward(grad_factor)
-
 		d_loss = d_real_loss - d_fake_loss
 
 		# option to use conditional loss sensitivity
 		if self.options['use_cls']:
 			d_wrong_loss = wrong_img_passed.mean()
-			d_wrong_loss.backward(grad_factor)
 			d_loss -= d_wrong_loss
 			return d_loss, d_real_loss, d_fake_loss, d_wrong_loss
 
@@ -344,7 +340,6 @@ class BeganGenerator(nn.Module):
 	# L_G = L(y_f)
 	def loss(self, fake_img, fake_img_recons):
 		g_loss = torch.mean(torch.abs(fake_img_recons - fake_img))
-		g_loss.backward()
 
 		return g_loss
 
