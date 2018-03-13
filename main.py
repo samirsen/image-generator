@@ -388,9 +388,9 @@ def main():
 
             # Calculate G loss
             if constants.USE_MODEL == 'began':
-                g_loss = generator.loss(gen_image, new_fake_img_passed)
+                g_loss = generator.loss(gen_image, fake_img_passed)
             else:
-                g_loss = generator.loss(new_fake_img_passed)
+                g_loss = generator.loss(fake_img_passed)
             g_loss = generator.loss(fake_img_passed)
 
 
