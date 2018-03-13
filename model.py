@@ -629,9 +629,9 @@ class BeganDiscriminator(nn.Module):
 	# Calculates the gradients and returns the loss
 	def calc_grad_d(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
 		if self.options['use_cls']:
-			d_loss = self.began_loss(real_img_passed, fake_img_passed, wrong_img_passed)
+			d_loss = self.loss(real_img_passed, fake_img_passed, wrong_img_passed)
 		else:
-			d_loss = self.began_loss(real_img_passed, fake_img_passed)
+			d_loss = self.loss(real_img_passed, fake_img_passed)
 
 		d_loss.backward()
 
