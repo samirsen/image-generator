@@ -259,9 +259,9 @@ def main():
             # calc_grad_d calcs gradients and steps backward
             if constants.USE_MODEL == 'began':
                 if constants.USE_CLS:
-                    d_loss = discriminator.calc_grad_d(true_img_batch, real_img_passed, gen_image, fake_img_passed, wrong_img, wrong_img_passed)
+                    d_loss = discriminator.calc_grad_d(true_img, real_img_passed, gen_image, fake_img_passed, wrong_img, wrong_img_passed)
                 else:
-                    d_loss = discriminator.calc_grad_d(true_img_batch, real_img_passed, gen_image, fake_img_passed)
+                    d_loss = discriminator.calc_grad_d(true_img, real_img_passed, gen_image, fake_img_passed)
             else:
                 if constants.USE_CLS:
                     d_loss = discriminator.calc_grad_d(real_img_passed, fake_img_passed, wrong_img_passed)
