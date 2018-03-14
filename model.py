@@ -427,7 +427,7 @@ def conv_block(input_dim, output_dim):
 		nn.ELU(inplace=True),
 		nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
 		nn.ELU(inplace=True),
-		nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=1, padding=0),
+		nn.Conv2d(input_dim, output_dim, kernel_size=1, stride=1, padding=0),
 		nn.AvgPool2d(kernel_size=2, stride=2)
 	)
 
@@ -540,6 +540,12 @@ class BeganDiscriminator(nn.Module):
 			# Dim: batch_size x (num_df * 8) x 8 x 8
 			conv_block(self.options['num_df'] * 8, self.options['num_df'] * 16),
 			# Dim: batch_size x (num_df * 16) x 4 x 4
+			nn.Conv2d(self.options['num_df'] * 16, self.options['num_df'] * 16, 3, 1, 1),
+			nn.ELU(inplace=True),
+			# Dim: batch_size x (num_df * 16) x 4 x 4
+			nn.Conv2d(self.options['num_df'] * 16, self.options['num_df'] * 16, 3, 1, 1),
+			nn.ELU(inplace=True),
+			# Dim: batch_size x (num_df * 16) x 4 x 4
 		)
 
 		if self.options['verbose']: print('BEGAN Discriminator Input Created')
@@ -567,13 +573,13 @@ class BeganDiscriminator(nn.Module):
 			# Dim: batch_size x (num_gf * 2) x 64 x 64
 			upsample_conv_block(self.options['num_df'] * 2, self.options['num_df'], 2),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['num_df'], 3, 1, 1),
 			nn.ELU(inplace=True),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['num_df'], 3, 1, 1),
 			nn.ELU(inplace=True),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['image_channels'], 3, 1, 1),
 			# Dim: batch_size x (num_image_channels) x 128 x 128
 			nn.Tanh()
 		)
