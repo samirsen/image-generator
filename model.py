@@ -484,6 +484,7 @@ class BeganGenerator(nn.Module):
 			# Dim: batch_size x (num_gf) x 128 x 128
 			nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
 			# Dim: batch_size x (num_image_channels) x 128 x 128
+			nn.Tanh()
 		)
 
 		if self.options['verbose']: print('BEGAN Generator Created\n')
@@ -574,6 +575,7 @@ class BeganDiscriminator(nn.Module):
 			# Dim: batch_size x (num_gf) x 128 x 128
 			nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
 			# Dim: batch_size x (num_image_channels) x 128 x 128
+			nn.Tanh()
 		)
 
 		if self.options['verbose']: print('BEGAN Discriminator Output Created')
