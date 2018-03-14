@@ -427,7 +427,7 @@ def conv_block(input_dim, output_dim):
 		nn.ELU(inplace=True),
 		nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
 		nn.ELU(inplace=True),
-		nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=1, padding=1),
+		nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=1, padding=0),
 		nn.AvgPool2d(kernel_size=2, stride=2)
 	)
 
@@ -526,7 +526,7 @@ class BeganDiscriminator(nn.Module):
 		if self.options['verbose']: print('Creating BEGAN Discriminator...')
 
 		# Discriminator layers for the input of the image
-		self.discriminator_input = nn.Sequential(
+		self.discriminator_encoder = nn.Sequential(
 			# Input Dim: batch_size x (num_channels) x 128 x 128
 			nn.Conv2d(self.options['image_channels'], self.options['num_df'], 3, 1, 1),
 			nn.ELU(inplace=True),
@@ -555,25 +555,25 @@ class BeganDiscriminator(nn.Module):
 
 		# Discriminator upsample layers for the concatenation of the text embedding and image to output an image
 		# Reconstructs the image
-		self.discriminator_output = nn.Sequential(
+		self.discriminator_decoder = nn.Sequential(
 			# Input Dim: batch_size x (num_df * 16 + t_dim) x 4 x 4
-			upsample_conv_block(self.options['num_gf'] * 16 + self.options['t_dim'], self.options['num_gf'] * 16, 2),
+			upsample_conv_block(self.options['num_df'] * 16 + self.options['t_dim'], self.options['num_df'] * 16, 2),
 			# Dim: batch_size x (num_gf * 16) x 8 x 8
-			upsample_conv_block(self.options['num_gf'] * 16, self.options['num_gf'] * 8, 2),
+			upsample_conv_block(self.options['num_df'] * 16, self.options['num_df'] * 8, 2),
 			# Dim: batch_size x (num_gf * 8) x 16 x 16
-			upsample_conv_block(self.options['num_gf'] * 8, self.options['num_gf'] * 4, 2),
+			upsample_conv_block(self.options['num_df'] * 8, self.options['num_df'] * 4, 2),
 			# Dim: batch_size x (num_gf * 4) x 32 x 32
-			upsample_conv_block(self.options['num_gf'] * 4, self.options['num_gf'] * 2, 2),
+			upsample_conv_block(self.options['num_df'] * 4, self.options['num_df'] * 2, 2),
 			# Dim: batch_size x (num_gf * 2) x 64 x 64
-			upsample_conv_block(self.options['num_gf'] * 2, self.options['num_gf'], 2),
+			upsample_conv_block(self.options['num_df'] * 2, self.options['num_df'], 2),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
 			nn.ELU(inplace=True),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
 			nn.ELU(inplace=True),
 			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
+			nn.Conv2d(self.options['num_df'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
 			# Dim: batch_size x (num_image_channels) x 128 x 128
 			nn.Tanh()
 		)
@@ -584,13 +584,13 @@ class BeganDiscriminator(nn.Module):
 
 	# BEGAN Discriminator Forward Propagation
 	def forward(self, images, text_embed):
-		images_intermediate = self.discriminator_input(images)
+		images_intermediate = self.discriminator_encoder(images)
 		projected_embed = self.d_projector(text_embed)
 		# Repeat the projected dimensions and change the permutations
 		# Dim: batch_size x 256 -> batch_size x 256 x 4 x 4
 		replicated_embed = projected_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
 		latent_vec = torch.cat([images_intermediate, replicated_embed], 1)
-		output = self.discriminator_output(latent_vec)
+		output = self.discriminator_encoder(latent_vec)
 
 		return output
 
@@ -623,7 +623,7 @@ class BeganDiscriminator(nn.Module):
 			d_loss = d_real_loss - self.began_k * d_fake_loss
 
 			# Update began k value
-			balance = (self.options['began_gamma'] * d_real_loss + d_fake_loss).data[0]
+			balance = (self.options['began_gamma'] * d_real_loss - d_fake_loss).data[0]
 			self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
 
 		return d_loss

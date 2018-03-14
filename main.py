@@ -313,6 +313,7 @@ def main():
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
             num_iterations += 1
 
+        print ('Total number of iterations: ', num_iterations)
         print ('Training G Loss: ', g_loss.data[0])
         print ('Training D Loss: ', d_loss.data[0])
         epoch_time = time.time()-st
