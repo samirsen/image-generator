@@ -612,7 +612,7 @@ class BeganDiscriminator(nn.Module):
 			d_loss = d_real_loss - self.began_k * (d_wrong_loss + d_fake_loss)
 
 			# Update began k value
-			balance = (self.options['began_gamma'] * d_real_loss + d_wrong_loss + d_fake_loss).data[0]
+			balance = (self.options['began_gamma'] * d_real_loss - d_wrong_loss - d_fake_loss).data[0]
 			self.began_k = min(max(self.began_k + self.options['began_lambda_k'] * balance, 0), 1)
 
 		# No CLS option
