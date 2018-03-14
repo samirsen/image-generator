@@ -596,7 +596,7 @@ class BeganDiscriminator(nn.Module):
 		# Dim: batch_size x 256 -> batch_size x 256 x 4 x 4
 		replicated_embed = projected_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
 		latent_vec = torch.cat([images_intermediate, replicated_embed], 1)
-		output = self.discriminator_encoder(latent_vec)
+		output = self.discriminator_decoder(latent_vec)
 
 		return output
 
