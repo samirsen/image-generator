@@ -125,8 +125,8 @@ def main():
 
     # Creates the model
     if constants.USE_MODEL == 'began':
-        generator = BeganGenerator(model_options)
-        discriminator = BeganDiscriminator(model_options)
+        generator = CondBeganGenerator(model_options)
+        discriminator = CondBeganDiscriminator(model_options)
     elif constants.USE_MODEL == 'wgan':
         generator = WGanGenerator(model_options)
         discriminator = WGanDiscriminator(model_options)
