@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import argparse
 import time
 import os
+from shutil import copyfile
 import torchvision.utils as vutils
 
 parser = argparse.ArgumentParser()
@@ -125,8 +126,8 @@ def main():
 
     # Creates the model
     if constants.USE_MODEL == 'began':
-        generator = BeganGenerator(model_options)
-        discriminator = BeganDiscriminator(model_options)
+        generator = CondBeganGenerator(model_options)
+        discriminator = CondBeganDiscriminator(model_options)
     elif constants.USE_MODEL == 'wgan':
         generator = WGanGenerator(model_options)
         discriminator = WGanDiscriminator(model_options)
@@ -328,6 +329,7 @@ def main():
             with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
                 f.write(constants.EXP_REPORT)
                 f.write("Time per epoch: " + str(epoch_time))
+                copyfile("constants.py", constants.SAVE_PATH + 'constants.py')
             print("Saved report")
 
         '''
