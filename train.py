@@ -11,6 +11,7 @@ import constants
 from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
 from text_model import TextModel, LSTM_Model
 from util import *
+from captions_utils import *
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import izip_longest
@@ -95,16 +96,10 @@ def make_save_dir(output_path):
         os.makedirs(output_path + 'images/')
         print("Made images directory")
 
-def load_data():
-    pass
 
-def choose_model():
-    if constants.USE_BEGAN_MODEL:
-        generator = BeganGenerator(model_options)
-        discriminator = BeganDiscriminator(model_options)
-    else:
-        generator = Generator(model_options)
-        discriminator = Discriminator(model_options)
+def choose_model(model_options):
+    generator = Generator(model_options)
+    discriminator = Discriminator(model_options)
 
     if torch.cuda.is_available():
         print("CUDA is available")
@@ -113,12 +108,12 @@ def choose_model():
         print("Moved models to GPU")
 
     # Initialize weights
-    generator.apply(util.weights_init)
-    discriminator.apply(util.weights_init)
+    generator.apply(weights_init)
+    discriminator.apply(weights_init)
 
     return generator, discriminator
 
-def choose_optimizer():
+def choose_optimizer(generator, discriminator):
     g_optimizer = optim.Adam(generator.parameters(), lr=constants.LR, betas=constants.BETAS)
     # Changes the optimizer to SGD if declared in constants
     if constants.D_OPTIMIZER_SGD:
@@ -130,6 +125,32 @@ def choose_optimizer():
 
     return g_optimizer, d_optimizer
 
+def init_model(discriminator, generator):
+    discriminator.train()
+    generator.train()
+    # Zero out gradient
+    discriminator.zero_grad()
+    for p in discriminator.parameters():
+        p.requires_grad = True
+
+def get_batches(data_dict, batch_keys, noise_vec):
+    if torch.cuda.is_available():
+        g_captions = torch.Tensor(get_text_description(data_dict, batch_keys)).cuda()
+        real_captions = torch.Tensor(get_text_description(data_dict, batch_keys)).cuda()
+        real_img = torch.Tensor(choose_real_image(data_dict, batch_keys)).cuda()
+        wrong_img = torch.Tensor(choose_wrong_image(data_dict, batch_keys)).cuda()
+        noise_vec = noise_vec.cuda()
+    else:
+        g_captions = torch.Tensor(get_text_description(data_dict, batch_keys))
+        real_captions = torch.Tensor(get_text_description(data_dict, batch_keys))
+        real_img = torch.Tensor(choose_real_image(data_dict, batch_keys))
+        wrong_img = torch.Tensor(choose_wrong_image(data_dict, batch_keys))
+
+    return g_captions, real_captions, real_img, wrong_img, noise_vec
+
+def load_images(filenames):
+    pass 
+
 
 def main():
     print("Starting training with LSTM ...")
@@ -137,22 +158,30 @@ def main():
     make_save_dir(output_path)
 
     model_options = constants.MAIN_MODEL_OPTIONS
-    captions_dict, image_dict = load_data()
+    caption_dict = load_flowers_capt_dict(data_dir='Data')
+    img_dict = load_images(caption_dict.keys())
 
-    generator, discriminator = choose_model()
-    g_optimizer, d_optimizer = choose_optimizer()
+    generator, discriminator = choose_model(model_options)
+    g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
 
     # Loop over dataset N times
     for epoch in range(constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
         st = time.time()
-        for i, batch_iter in enumerate(grouper(captions_dict.keys(), constants.BATCH_SIZE)):
+        for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
-            noise_vec = Variable(torch.randn(len(batch_keys), model_options['z_dim'], 1, 1))
-            if torch.cuda.is_available():
-                noise_vec = noise_vec.cuda()
+            noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
 
-            discriminator.train()
-            generator.train()
-            # Zero out gradient
-            discriminator.zero_grad()
+            init_model(discriminator, generator)
+
+            gen_caption_batch, real_caption_batch, real_img_batch, wrong_img_batch, noise_vec = get_batches(caption_dict, img_dict, batch_keys, noise_vec)
+            print (gen_caption_batch.size())
+            print (real_caption_batch.size())
+            break
+
+            # LSTM stuff goes here
+
+            # gen_image = generator.forward(Variable(gen_captions), Variable(noise_vec))
+
+if __name__ == '__main__':
+    main()
