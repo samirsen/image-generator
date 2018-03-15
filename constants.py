@@ -21,7 +21,7 @@ ENTIRE_DATASET = 'flowers/jpg/'
 # A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
 SMALL_DATASET = 'flowers/smalljpg/'
 # Directory the Flowers captions are located
-FLOWERS_CAPTION = 'flowers/text_c10'
+FLOWERS_CAPTION_DIR = 'flowers/text_c10'
 # Flowers dictionary save file
 FLOWERS_CAP_DICT = "flowers_captions.p"
 # Number of flower classes in the dataset
