@@ -21,7 +21,7 @@ ENTIRE_DATASET = 'flowers/jpg/'
 # A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
 SMALL_DATASET = 'flowers/smalljpg/'
 # Directory the Flowers captions are located
-FLOWERS_CAPTION = 'flowers/text_c10'
+FLOWERS_CAPTION_DIR = 'flowers/text_c10'
 # Flowers dictionary save file
 FLOWERS_CAP_DICT = "flowers_captions.p"
 # Number of flower classes in the dataset
@@ -45,11 +45,11 @@ main.py
 REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
-USE_CLS = True
+USE_CLS = False
 
 # The different models to use
 # 'dcgan', 'wgan', 'began'
-USE_MODEL = 'dcgan'
+USE_MODEL = 'began'
 
 ##### END MODEL OPTIONS #####
 
@@ -117,4 +117,5 @@ MAIN_MODEL_OPTIONS = {
     # BEGAN OPTIONS
     'began_gamma':0.5,              # Gamma value for BEGAN model (balance between D and G)
     'began_lambda_k':0.001,         # Learning rate for k of BEGAN model
+    'began_hidden_size':64,         # Hidden size for embedder of BEGAN model
     }

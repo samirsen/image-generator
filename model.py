@@ -110,6 +110,7 @@ class Generator(nn.Module):
 	# Calculates the grad of g
 	def calc_grad_g(self, new_fake_img_passed):
 		g_loss = self.loss(new_fake_img_passed)
+		g_loss.backward()
 
 		return g_loss
 
@@ -511,6 +512,7 @@ class BeganGenerator(nn.Module):
 	# Calculates the grad of g
 	def calc_grad_g(self, fake_img, fake_img_recons):
 		g_loss = self.loss(fake_img, fake_img_recons)
+		g_loss.backward()
 
 		return g_loss
 
