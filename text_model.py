@@ -59,7 +59,7 @@ class LSTM_Model(nn.Module):
 	def init_hidden(self, minibatch_size):
 		# Before we've done anything, we dont have any hidden state.
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
-        return (Variable(torch.zeros(1, minibatch_size, constants.HIDDEN_DIM)),
+		return (Variable(torch.zeros(1, minibatch_size, constants.HIDDEN_DIM)),
                 Variable(torch.zeros(1, minibatch_size, constants.HIDDEN_DIM)))
 
 
