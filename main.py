@@ -60,13 +60,13 @@ def choose_wrong_image(image_dict, batch_keys):
     wrong_image = np.swapaxes(wrong_image, 1, 2)
     return wrong_image
 
-# Finds the true image for the given batch data
-def choose_true_image(image_dict, batch_keys):
-    true_img = np.array([image_dict[k] for k in batch_keys])
-    true_img = augment_image_batch(true_img)
-    true_img = np.swapaxes(true_img, 2, 3)
-    true_img = np.swapaxes(true_img, 1, 2)
-    return true_img
+# Finds the real image for the given batch data
+def choose_real_image(image_dict, batch_keys):
+    real_img = np.array([image_dict[k] for k in batch_keys])
+    real_img = augment_image_batch(real_img)
+    real_img = np.swapaxes(real_img, 2, 3)
+    real_img = np.swapaxes(real_img, 1, 2)
+    return real_img
 
 def augment_image_batch(images):
     batch_size = images.shape[0]

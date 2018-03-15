@@ -45,11 +45,11 @@ main.py
 REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
-USE_CLS = True
+USE_CLS = False
 
 # The different models to use
 # 'dcgan', 'wgan', 'began'
-USE_MODEL = 'dcgan'
+USE_MODEL = 'began'
 
 ##### END MODEL OPTIONS #####
 
@@ -117,4 +117,5 @@ MAIN_MODEL_OPTIONS = {
     # BEGAN OPTIONS
     'began_gamma':0.5,              # Gamma value for BEGAN model (balance between D and G)
     'began_lambda_k':0.001,         # Learning rate for k of BEGAN model
+    'began_hidden_size':64,         # Hidden size for embedder of BEGAN model
     }

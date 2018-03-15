@@ -12,6 +12,7 @@ import glob
 import os
 import cPickle as pickle
 import torch
+from itertools import izip_longest
 
 
 # Makes the directories of they don't already exist
@@ -151,6 +152,68 @@ def preprocess(batch_input):
         index += len(ex)
 
     return flatten, offsets
+
+# https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/began.py
+def adjust_learning_rate(optimizer, niter):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = constants.LR * (0.95 ** (niter // constants.LR_DECAY_EVERY))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return optimizer
+
+# From https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
+# Iterates over an array in chunks
+def grouper(array, n):
+    args = [iter(array)] * n
+    return izip_longest(*args)
+
+# Show the generated image improves over time
+def print_images(generated):
+    for img in generated:
+        image_done = img.data.numpy()
+        swap_image = np.swapaxes(image_done,1,2)
+        swap_image = np.swapaxes(swap_image,2,3)
+        plt.imshow(swap_image[0])
+        plt.show()
+
+def get_text_description(text_caption_dict, batch_keys):
+    g_idx = [np.random.randint(len(text_caption_dict[batch_keys[0]])) for i in range(len(batch_keys))]
+    g_text_des = np.array([text_caption_dict[k][i] for k,i in zip(batch_keys, g_idx)])
+    # g_text_des = np.expand_dims(g_text_des, axis=0) ONLY NEED FOR 1 DIM
+
+    return g_text_des
+
+def choose_wrong_image(image_dict, batch_keys):
+    wrong_image = []
+    for k in batch_keys:
+        wrong_key = np.random.choice(image_dict.keys())
+        while wrong_key == k:
+            wrong_key = np.random.choice(image_dict.keys())
+
+        wrong_image.append(image_dict[wrong_key])
+    wrong_image = np.array(wrong_image)
+    wrong_image = augment_image_batch(wrong_image)
+    wrong_image = np.swapaxes(wrong_image, 2, 3)
+    wrong_image = np.swapaxes(wrong_image, 1, 2)
+    return wrong_image
+
+# Finds the real image for the given batch data
+def choose_real_image(image_dict, batch_keys):
+    real_img = np.array([image_dict[k] for k in batch_keys])
+    real_img = augment_image_batch(real_img)
+    real_img = np.swapaxes(real_img, 2, 3)
+    real_img = np.swapaxes(real_img, 1, 2)
+    return real_img
+
+def augment_image_batch(images):
+    batch_size = images.shape[0]
+    for i in range(batch_size):
+        curr = images[i, :, :, :]
+        if np.random.rand() > .5:
+            curr = np.flip(curr, 1)
+        images[i, :, :, :] = curr
+    return images
+
 
 # https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/began.py
 def adjust_learning_rate(optimizer, niter):
