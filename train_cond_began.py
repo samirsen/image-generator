@@ -160,23 +160,23 @@ def main():
         	# L_G = L(y_f)
         	# k = k + lambda_k * (gamma * L(y_r) + L(y_w) + L(y_f))
             if constants.USE_CLS:
-    			d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
-    			d_wrong_loss = torch.mean(torch.abs(wrong_img_passed - Variable(wrong_img)))
-    			d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
-    			d_loss = d_real_loss - began_k * (d_wrong_loss + d_fake_loss)
+                d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
+                d_wrong_loss = torch.mean(torch.abs(wrong_img_passed - Variable(wrong_img)))
+                d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
+                d_loss = d_real_loss - began_k * (d_wrong_loss + d_fake_loss)
 
     			# Update began k value
-    			balance = (model_options['began_gamma'] * d_real_loss - d_wrong_loss - d_fake_loss).data[0]
-    			began_k = min(max(began_k + model_options['began_lambda_k'] * balance, 0), 1)
+                balance = (model_options['began_gamma'] * d_real_loss - d_wrong_loss - d_fake_loss).data[0]
+                began_k = min(max(began_k + model_options['began_lambda_k'] * balance, 0), 1)
     		# No CLS option
             else:
-    			d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
-    			d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
-    			d_loss = d_real_loss - began_k * d_fake_loss
+                d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
+                d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
+                d_loss = d_real_loss - began_k * d_fake_loss
 
     			# Update began k value
-    			balance = (model_options['began_gamma'] * d_real_loss - d_fake_loss).data[0]
-    			began_k = min(max(began_k + model_options['began_lambda_k'] * balance, 0), 1)
+                balance = (model_options['began_gamma'] * d_real_loss - d_fake_loss).data[0]
+                began_k = min(max(began_k + model_options['began_lambda_k'] * balance, 0), 1)
 
             d_loss.backward()
             d_optimizer.step()
