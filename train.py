@@ -133,33 +133,20 @@ def init_model(discriminator, generator):
     for p in discriminator.parameters():
         p.requires_grad = True
 
-def get_batches(data_dict, batch_keys, noise_vec):
+def get_batches(caption_dict, img_dict, batch_keys, noise_vec):
     if torch.cuda.is_available():
-        g_captions = torch.Tensor(get_text_description(data_dict, batch_keys)).cuda()
-        real_captions = torch.Tensor(get_text_description(data_dict, batch_keys)).cuda()
-        real_img = torch.Tensor(choose_real_image(data_dict, batch_keys)).cuda()
-        wrong_img = torch.Tensor(choose_wrong_image(data_dict, batch_keys)).cuda()
+        g_captions = torch.Tensor(get_text_description(caption_dict, batch_keys)).cuda()
+        real_captions = torch.Tensor(get_text_description(caption_dict, batch_keys)).cuda()
+        real_img = torch.Tensor(choose_real_image(img_dict, batch_keys)).cuda()
+        wrong_img = torch.Tensor(choose_wrong_image(img_dict, batch_keys)).cuda()
         noise_vec = noise_vec.cuda()
     else:
-        g_captions = torch.Tensor(get_text_description(data_dict, batch_keys))
-        real_captions = torch.Tensor(get_text_description(data_dict, batch_keys))
-        real_img = torch.Tensor(choose_real_image(data_dict, batch_keys))
-        wrong_img = torch.Tensor(choose_wrong_image(data_dict, batch_keys))
+        g_captions = torch.Tensor(get_text_description(caption_dict, batch_keys))
+        real_captions = torch.Tensor(get_text_description(caption_dict, batch_keys))
+        real_img = torch.Tensor(choose_real_image(img_dict, batch_keys))
+        wrong_img = torch.Tensor(choose_wrong_image(img_dict, batch_keys))
 
     return g_captions, real_captions, real_img, wrong_img, noise_vec
-
-def load_images(filenames):
-    img_dict = {}
-
-    flowers_dir = os.path.join('Data', constants.SMALL_DATASET)
-    for f in filenames:
-        image_path = flowers_dir + f
-        curr_image = skimage.io.imread(image_path)
-        resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
-        img_dict[f] = resized_image
-
-    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) )
-    return img_dict
 
 def main():
     print("Starting training with LSTM ...")
@@ -168,7 +155,7 @@ def main():
 
     model_options = constants.MAIN_MODEL_OPTIONS
     caption_dict = load_flowers_capt_dict(data_dir='Data')
-    img_dict = load_image_dataset()
+    img_dict = load_image_dict()
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)

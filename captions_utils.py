@@ -5,18 +5,31 @@ import constants
 import skimage.io
 import skimage.transform
 import cPickle as pickle
+import torch
+
 # from numba import jit
+def load_image_dict(save_path=constants.FLOWERS_IMG_DICT):
+	flowers_dict = torch.load(save_path)
+	return flowers_dict
+
+def save_images_dict(filenames, save_path=constants.FLOWERS_IMG_DICT):
+	print("Loading images using torch")
+	image_dict = create_images_dict(filenames)
+	print("Done loading images.")
+	torch.save(image_dict, save_path)
+	return image_dict
+
 def create_images_dict(filenames):
     img_dict = {}
 
-    flowers_dir = os.path.join('Data', constants.SMALL_DATASET)
+    flowers_dir = os.path.join('Data', constants.ENTIRE_DATASET)
     for f in filenames:
         image_path = flowers_dir + f
         curr_image = skimage.io.imread(image_path)
         resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
         img_dict[f] = resized_image
 
-    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) ))
+    # pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) ))
     return img_dict
 
 def load_image_dataset(data_dir='Data'):
