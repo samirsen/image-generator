@@ -416,12 +416,13 @@ def main():
         vutils.save_image(gen_image[1].data.cpu(),
                     constants.SAVE_PATH + 'images/gen1_epoch' + str(epoch) + '.png',
                     normalize=True)
-        vutils.save_image(real_img_passed[0].data.cpu(),
-                    constants.SAVE_PATH + 'images/real_recon0_epoch' + str(epoch) + '.png',
-                    normalize=True)
-        vutils.save_image(real_img_passed[1].data.cpu(),
-                    constants.SAVE_PATH + 'images/real_recon1_epoch' + str(epoch) + '.png',
-                    normalize=True)
+        if constants.USE_MODEL == 'began':
+            vutils.save_image(real_img_passed[0].data.cpu(),
+                        constants.SAVE_PATH + 'images/real_recon0_epoch' + str(epoch) + '.png',
+                        normalize=True)
+            vutils.save_image(real_img_passed[1].data.cpu(),
+                        constants.SAVE_PATH + 'images/real_recon1_epoch' + str(epoch) + '.png',
+                        normalize=True)
         # Save model
         if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:
             save_checkpoint = {
