@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import argparse
 import time
 import os
+from shutil import copyfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--resume')
@@ -323,6 +324,7 @@ def main():
             with open(constants.SAVE_PATH + 'report.txt', 'w') as f:
                 f.write(constants.EXP_REPORT)
                 f.write("Time per epoch: " + str(epoch_time))
+                copyfile("constants.py", constants.SAVE_PATH + 'constants.py')
             print("Saved report")
 
 
