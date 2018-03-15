@@ -16,7 +16,7 @@ def create_images_dict(filenames):
         resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
         img_dict[f] = resized_image
 
-    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) )
+    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) ))
     return img_dict
 
 def load_image_dataset(data_dir='Data'):
