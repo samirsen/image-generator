@@ -2,8 +2,27 @@ import os
 import time
 import numpy as np
 import constants
+import skimage.io
+import skimage.transform
 import cPickle as pickle
 # from numba import jit
+def create_images_dict(filenames):
+    img_dict = {}
+
+    flowers_dir = os.path.join('Data', constants.SMALL_DATASET)
+    for f in filenames:
+        image_path = flowers_dir + f
+        curr_image = skimage.io.imread(image_path)
+        resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
+        img_dict[f] = resized_image
+
+    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) )
+    return img_dict
+
+def load_image_dataset(data_dir='Data'):
+	flowers_dir = os.path.join(data_dir,constants.FLOWERS_IMG_DICT)
+	flowers_img_dict = pickle.load(open( flowers_dir, "rb" ))
+	return flowers_img_dict
 
 # @jit(nopython=True, parallel=True)
 def create_caption_dict(data_dir):

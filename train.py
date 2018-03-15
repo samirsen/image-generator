@@ -149,8 +149,17 @@ def get_batches(data_dict, batch_keys, noise_vec):
     return g_captions, real_captions, real_img, wrong_img, noise_vec
 
 def load_images(filenames):
-    pass 
+    img_dict = {}
 
+    flowers_dir = os.path.join('Data', constants.SMALL_DATASET)
+    for f in filenames:
+        image_path = flowers_dir + f
+        curr_image = skimage.io.imread(image_path)
+        resized_image = skimage.transform.resize(curr_image, (constants.IMAGE_SIZE, constants.IMAGE_SIZE)).astype('float32')
+        img_dict[f] = resized_image
+
+    pickle.dump( (img_dict, open( os.path.join('Data',constants.FLOWERS_IMG_DICT), "wb" ) )
+    return img_dict
 
 def main():
     print("Starting training with LSTM ...")
@@ -159,7 +168,7 @@ def main():
 
     model_options = constants.MAIN_MODEL_OPTIONS
     caption_dict = load_flowers_capt_dict(data_dir='Data')
-    img_dict = load_images(caption_dict.keys())
+    img_dict = load_image_dataset()
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
