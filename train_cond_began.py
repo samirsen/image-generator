@@ -273,15 +273,15 @@ def main():
             # Calculate D loss
             # D LOSS
             if constants.USE_CLS:
-    			d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
-    			d_wrong_loss = torch.mean(torch.abs(wrong_img_passed - Variable(wrong_img)))
-    			d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
-    			d_loss = d_real_loss - began_k * (d_wrong_loss + d_fake_loss)
+                d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
+                d_wrong_loss = torch.mean(torch.abs(wrong_img_passed - Variable(wrong_img)))
+                d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
+                d_loss = d_real_loss - began_k * (d_wrong_loss + d_fake_loss)
     		# No CLS option
             else:
-    			d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
-    			d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
-    			d_loss = d_real_loss - began_k * d_fake_loss
+                d_real_loss = torch.mean(torch.abs(real_img_passed - Variable(real_img)))
+                d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
+                d_loss = d_real_loss - began_k * d_fake_loss
 
             # Calculate G loss
             g_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
