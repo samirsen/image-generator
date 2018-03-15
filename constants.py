@@ -21,7 +21,7 @@ ENTIRE_DATASET = 'flowers/jpg/'
 # A small subset (the first 128 flower pictures) of the entire flower dataset (used for testing code out)
 SMALL_DATASET = 'flowers/smalljpg/'
 # Directory the Flowers captions are located
-FLOWERS_CAPTION = 'flowers/text_c10'
+FLOWERS_CAPTION_DIR = 'flowers/text_c10'
 # Flowers dictionary save file
 FLOWERS_CAP_DICT = "flowers_captions.p"
 # Number of flower classes in the dataset
@@ -77,7 +77,7 @@ LOSS_SAVE_IDX = 1
 # Optimizer options
 # True if optimizer will be stochastic gradient descent
 # False if optimizer will be adam
-D_OPTIMIZER_SGD = True
+D_OPTIMIZER_SGD = False
 # Learning rate for the Optimizer
 LR = 0.0001
 # Beta options for the Adam Optimizer
