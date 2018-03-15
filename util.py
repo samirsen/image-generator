@@ -11,6 +11,24 @@ from scipy.io import loadmat
 import glob
 import os
 import cPickle as pickle
+import torch
+
+
+# Makes the directories of they don't already exist
+def make_directories():
+    output_path = constants.SAVE_PATH
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+        print("Made output directory")
+    else:
+        print("WARNING: starting training with an existing outputs directory")
+    if not os.path.exists(output_path + 'weights/'):
+        os.makedirs(output_path + 'weights/')
+        print("Made weights directory")
+    if not os.path.exists(output_path + 'images/'):
+        os.makedirs(output_path + 'images/')
+        print("Made images directory")
+
 
 # Loads a map from image file names to 'test', 'train', or 'val'
 # Used in other functions to split data
@@ -67,6 +85,23 @@ def load_text_vec(directory, file_name, dataset_map):
 
     return train_captions, val_captions, test_captions
 
+# Gets images for the main function
+def get_images(directory, file_name, save_path):
+    if os.path.exists(save_path):
+        image_dicts = torch.load(save_path)
+        train_image_dict, val_image_dict, test_image_dict = image_dicts
+        print("Loaded images")
+    else:
+        print("Loading images and separating into train/val/test sets")
+        path = os.path.join(directory, file_name)
+        filenames = train_captions.keys() + val_captions.keys() + test_captions.keys()
+        train_image_dict, val_image_dict, test_image_dict = util.load_images(path, filenames, dataset_map)
+        image_dicts = [train_image_dict, val_image_dict, test_image_dict]
+        torch.save(image_dicts, save_path)
+
+    return train_image_dict, val_image_dict, test_image_dict
+
+
 # Takes in the directory and a list of file names and returns a dict of file name -> images
 def load_images(directory, filenames, dataset_map):
     train_image_dict, val_image_dict, test_image_dict = {}, {}, {}
@@ -116,3 +151,11 @@ def preprocess(batch_input):
         index += len(ex)
 
     return flatten, offsets
+
+# https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/began.py
+def adjust_learning_rate(optimizer, niter):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = constants.LR * (0.95 ** (niter // constants.LR_DECAY_EVERY))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return optimizer
