@@ -297,7 +297,7 @@ def main():
         torch.save(losses, constants.SAVE_PATH + 'losses')
 
         # Save images
-        utils.save_image(gen_image[0].data.cpu(),
+        vutils.save_image(gen_image[0].data.cpu(),
                     constants.SAVE_PATH + 'images/gen0_epoch' + str(epoch) + '.png',
                     normalize=True)
         vutils.save_image(gen_image[1].data.cpu(),
