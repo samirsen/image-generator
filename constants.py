@@ -53,7 +53,7 @@ USE_MODEL = 'began'
 
 ##### END MODEL OPTIONS #####
 
-
+FLOWERS_IMG_DICT = 'Data/flower_images.torch' 
 
 FLOWERS_DICTS_PATH = 'Data/flowers_dicts.torch'
 # SAVE PATH FOR MODLE OPTIONS
