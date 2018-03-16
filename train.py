@@ -39,6 +39,7 @@ def print_images(generated):
 def get_text_description(text_caption_dict, batch_keys):
     g_idx = [np.random.randint(len(text_caption_dict[batch_keys[0]])) for i in range(len(batch_keys))]
     g_text_des = np.array([text_caption_dict[k][i] for k,i in zip(batch_keys, g_idx)])
+    # g_text_des = [text_caption_dict[k][i] for k,i in zip(batch_keys, g_idx)]
     # g_text_des = np.expand_dims(g_text_des, axis=0) ONLY NEED FOR 1 DIM
 
     return g_text_des
@@ -125,6 +126,18 @@ def choose_optimizer(generator, discriminator):
 
     return g_optimizer, d_optimizer
 
+def init_lstm(model_options):
+    if torch.cuda.is_available():
+        lstm = LSTM_Model(model_options).cuda()
+    else:
+        lstm = LSTM_Model(model_options)
+
+    lstm.apply(lstm_weights_init)
+    lstm_optim = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
+
+    return lstm, lstm_optim
+
+
 def init_model(discriminator, generator):
     discriminator.train()
     generator.train()
@@ -157,6 +170,7 @@ def main():
     caption_dict = load_flowers_capt_dict(data_dir='Data')
     img_dict = load_image_dict()
 
+    LSTM, lstm_optimizer = init_lstm(model_options)
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
 
@@ -172,7 +186,8 @@ def main():
 
             gen_caption_batch, real_caption_batch, real_img_batch, wrong_img_batch, noise_vec = get_batches(caption_dict, img_dict, batch_keys, noise_vec)
 
-            # LSTM stuff goes here
+            # LSTM stuff goes here -- should input both gen_caption_batch and real_caption_batch to the lstm
+
 
             # gen_image = generator.forward(Variable(gen_captions), Variable(noise_vec))
 
