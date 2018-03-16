@@ -1,5 +1,5 @@
 '''
-trainBegan.py
+train_cond_began.py
 '''
 import torch
 import torch.nn.functional as f
@@ -13,7 +13,6 @@ import util
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import izip_longest
-import scipy.misc
 import matplotlib.pyplot as plt
 import argparse
 import time
