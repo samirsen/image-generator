@@ -86,7 +86,7 @@ def main():
 
 
     ########## VARIABLES ##########
-    noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'], 1, 1)
+    noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'])
     text_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
     real_img = torch.FloatTensor(constants.BATCH_SIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
     real_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
@@ -122,7 +122,7 @@ def main():
 
 
             ########## BATCH DATA #########
-            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'])
             text_vec_batch = torch.Tensor(util.get_text_description(train_captions, batch_keys))
             real_caption_batch = torch.Tensor(util.get_text_description(train_captions, batch_keys))
             real_img_batch = torch.Tensor(util.choose_real_image(train_image_dict, batch_keys))
@@ -189,7 +189,7 @@ def main():
 
             # Generate image again if you want to
             if constants.REGEN_IMAGE:
-                noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+                noise_batch = torch.randn(curr_batch_size, model_options['z_dim'])
                 if torch.cuda.is_available():
                     noise_batch = noise_batch.cuda()
                 noise_vec.resize_as_(noise_batch).copy_(noise_batch)
@@ -238,7 +238,7 @@ def main():
             curr_batch_size = len(batch_keys)
 
             # Gather batch data
-            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
+            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'])
             text_vec_batch = torch.Tensor(util.get_text_description(val_captions, batch_keys))
             real_caption_batch = torch.Tensor(util.get_text_description(val_captions, batch_keys))
             real_img_batch = torch.Tensor(util.choose_real_image(val_image_dict, batch_keys))
