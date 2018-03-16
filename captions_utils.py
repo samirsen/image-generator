@@ -72,6 +72,24 @@ def load_coco_capt_dict():
     coco_capt_dict = pickle.load(open(constants.COCO_CAP_DICT, "rb"))
     return coco_capt_dict
 
+def preprocess2(batch_input):
+    """Inputs for self.embeddings in TextModel(). Batch_input must be numpy padded"""
+    batch_size, sent_len = batch_input.shape
+    offsets = [sent_len * i for i in range(batch_size)]
+    return batch_input.flatten(), offsets
+
+
+def preprocess(batch_input):
+    """If batch_input isn't numpy"""
+    flatten, offsets = [], []
+    index = 0
+    for ex in batch_input:
+        offsets.append(index)
+        flatten.extend(ex)
+        index += len(ex)
+
+    return flatten, offsets
+
 def main():
     data_dir = 'Data'
     create_caption_dict(data_dir)

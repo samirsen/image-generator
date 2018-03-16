@@ -135,14 +135,14 @@ def init_model(discriminator, generator):
 
 def get_batches(caption_dict, img_dict, batch_keys, noise_vec):
     if torch.cuda.is_available():
-        g_captions = torch.Tensor(get_text_description(caption_dict, batch_keys)).cuda()
-        real_captions = torch.Tensor(get_text_description(caption_dict, batch_keys)).cuda()
+        g_captions = get_text_description(caption_dict, batch_keys)
+        real_captions = get_text_description(caption_dict, batch_keys)
         real_img = torch.Tensor(choose_real_image(img_dict, batch_keys)).cuda()
         wrong_img = torch.Tensor(choose_wrong_image(img_dict, batch_keys)).cuda()
         noise_vec = noise_vec.cuda()
     else:
-        g_captions = torch.Tensor(get_text_description(caption_dict, batch_keys))
-        real_captions = torch.Tensor(get_text_description(caption_dict, batch_keys))
+        g_captions = get_text_description(caption_dict, batch_keys)
+        real_captions = get_text_description(caption_dict, batch_keys)
         real_img = torch.Tensor(choose_real_image(img_dict, batch_keys))
         wrong_img = torch.Tensor(choose_wrong_image(img_dict, batch_keys))
 
@@ -171,9 +171,6 @@ def main():
             init_model(discriminator, generator)
 
             gen_caption_batch, real_caption_batch, real_img_batch, wrong_img_batch, noise_vec = get_batches(caption_dict, img_dict, batch_keys, noise_vec)
-            print (gen_caption_batch.size())
-            print (real_caption_batch.size())
-            break
 
             # LSTM stuff goes here
 
