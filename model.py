@@ -440,7 +440,7 @@ def upsample_conv_block(input_dim, output_dim):
         nn.ELU(inplace=True),
         nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
         nn.ELU(inplace=True),
-        nn.UpsamplingNearest2d(scale_factor=2)
+        nn.Upsample(scale_factor=2)
      )
 
 class BeganGenerator(nn.Module):
@@ -448,28 +448,19 @@ class BeganGenerator(nn.Module):
         super(BeganGenerator,self).__init__()
 
         self.options = options
-        # Dimensions of the latent vector (concatenate processed embedding vector and noise vector)
-        self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
+        # Dimensions of the latent vector (concatenate original embedding vector and noise vector)
+        self.options['concat_dim'] = self.options['caption_vec_len'] + self.options['z_dim']
 
         if self.options['verbose']: print('\nCreating BEGAN Generator...')
 
-		# Projector processes the word embedding before we concatenate embedding with noise
-        self.g_projector = nn.Sequential(
-			nn.Linear(in_features=self.options['caption_vec_len'], out_features=self.options['t_dim']),
-			nn.BatchNorm1d(num_features=self.options['t_dim']),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True)
-		)
-
-        if self.options['verbose']: print('BEGAN Generator Projector Created')
-
         # Input Dim: batch_size x (concat_dim)
-        self.embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
+        self.g_embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
         # Dim: batch_size x (num_gf * 8 * 8)
 
         if self.options['verbose']: print('BEGAN Generator Embedder Created')
 
         self.generator = nn.Sequential(
-            # Dim: batch_size x (num_gf) x 8 x 8
+            # Input Dim: batch_size x (num_gf) x 8 x 8
             upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
             # Dim: batch_size x (num_gf) x 16 x 16
             upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
@@ -481,7 +472,7 @@ class BeganGenerator(nn.Module):
             nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
             nn.ELU(inplace=True),
             # Dim: batch_size x (num_gf) x 128 x 128
-            nn.Conv2d(self.options['num_gf'], self.options['num_gf'],kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
             nn.ELU(inplace=True),
             # Dim: batch_size x (num_gf) x 128 x 128
             nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
@@ -492,14 +483,13 @@ class BeganGenerator(nn.Module):
         if self.options['verbose']: print('BEGAN Generator Created\n')
 
     def forward(self, text_embed, noise):
-        X = self.g_projector(text_embed)
-        # Concatenate the projected embedding and the noise
-        X = torch.cat([X, noise], 1)
-        X = self.embedder(X)
-        X = X.view(X.size(0), self.options['num_gf'], 8, 8)
-        X = self.generator(X)
+		# Concatenate the projected embedding and the noise
+		X = torch.cat([text_embed, noise], 1)
+		X = self.g_embedder(X)
+		X = X.view(X.size(0), self.options['num_gf'], 8, 8)
+		X = self.generator(X)
 
-        return X
+		return X
 
 
 class BeganDiscriminator(nn.Module):
@@ -578,33 +568,16 @@ class BeganDiscriminator(nn.Module):
         return X
 
 
+
+
 '''
 Conditional BEGAN Model
 Based on paper
 https://arxiv.org/pdf/1703.10717.pdf
 https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/models.py
 https://github.com/carpedm20/BEGAN-pytorch
+https://github.com/taey16/CBEGAN
 '''
-
-def cond_conv_block(input_dim, output_dim):
-	return nn.Sequential(
-		nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
-		nn.ELU(inplace=True),
-		nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
-		nn.ELU(inplace=True),
-		nn.Conv2d(input_dim, output_dim, kernel_size=1, stride=1, padding=0),
-		nn.AvgPool2d(kernel_size=2, stride=2)
-	)
-
-# Convolution and upsample doubles size of image (instead of convtranspose)
-def cond_upsample_conv_block(input_dim, output_dim, scale):
-	return nn.Sequential(
-		nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=1, padding=1),
-		nn.ELU(inplace=True),
-		nn.Conv2d(output_dim, output_dim, kernel_size=3, stride=1, padding=1),
-		nn.ELU(inplace=True),
-		nn.Upsample(scale_factor=scale)
-	)
 
 # Unlike the other generator (which uses convtranpse), this generator uses conv and upsampling blocks
 class CondBeganGenerator(nn.Module):
@@ -612,34 +585,26 @@ class CondBeganGenerator(nn.Module):
 		super(CondBeganGenerator, self).__init__()
 
 		self.options = options
-		# Dimensions of the latent vector (concatenate processed embedding vector and noise vector)
-		self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
+        # Dimensions of the latent vector (concatenate original embedding vector and noise vector)
+		self.options['concat_dim'] = self.options['caption_vec_len'] + self.options['z_dim']
 
-		if self.options['verbose']: print('\nCreating COND BEGAN Generator...')
+		if self.options['verbose']: print('\nCreating CONDITIONAL BEGAN Generator...')
 
-		# Projector processes the word embedding before we concatenate embedding with noise
-		self.g_projector = nn.Sequential(
-			nn.Linear(in_features=self.options['caption_vec_len'], out_features=self.options['t_dim']),
-			nn.BatchNorm1d(num_features=self.options['t_dim']),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True)
-		)
+        # Input Dim: batch_size x (concat_dim)
+		self.g_embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
+        # Dim: batch_size x (num_gf * 8 * 8)
 
-		if self.options['verbose']: print('COND BEGAN Generator Projector Created')
+		if self.options['verbose']: print('CONDITIONAL BEGAN Generator Embedder Created')
 
-		# Generator inputs concated word embedding and noise vector (latent vector) and outputs image
 		self.generator = nn.Sequential(
-			# Input Dim: batch_size x (concat_dim) x 1 x 1
-			cond_upsample_conv_block(self.options['concat_dim'], self.options['num_gf'] * 16, 4),
-			# Dim: batch_size x (num_gf * 16) x 4 x 4
-			cond_upsample_conv_block(self.options['num_gf'] * 16, self.options['num_gf'] * 8, 2),
-			# Dim: batch_size x (num_gf * 8) x 8 x 8
-			cond_upsample_conv_block(self.options['num_gf'] * 8, self.options['num_gf'] * 4, 2),
-			# Dim: batch_size x (num_gf * 4) x 16 x 16
-			cond_upsample_conv_block(self.options['num_gf'] * 4, self.options['num_gf'] * 2, 2),
-			# Dim: batch_size x (num_gf * 2) x 32 x 32
-			cond_upsample_conv_block(self.options['num_gf'] * 2, self.options['num_gf'], 2),
+			# Input Dim: batch_size x (num_gf) x 8 x 8
+			upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
+			# Dim: batch_size x (num_gf) x 16 x 16
+			upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
+			# Dim: batch_size x (num_gf) x 32 x 32
+			upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
 			# Dim: batch_size x (num_gf) x 64 x 64
-			cond_upsample_conv_block(self.options['num_gf'], self.options['num_gf'], 2),
+			upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
 			# Dim: batch_size x (num_gf) x 128 x 128
 			nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
 			nn.ELU(inplace=True),
@@ -648,22 +613,20 @@ class CondBeganGenerator(nn.Module):
 			nn.ELU(inplace=True),
 			# Dim: batch_size x (num_gf) x 128 x 128
 			nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
-			# Dim: batch_size x (num_image_channels) x 128 x 128
+			# Dim: batch_size x (num_channels) x 128 x 128
 			nn.Tanh()
 		)
 
-		if self.options['verbose']: print('COND BEGAN Generator Created\n')
+		if self.options['verbose']: print('CONDITIONAL BEGAN Generator Created\n')
 
-	# Generator Forward Propagation
 	def forward(self, text_embed, noise):
-		projected_embed = self.g_projector(text_embed)
-		# Add dimension 2 and 3 to make projected embed into 4 dimension
-		# batch_size x num_channels x height (1) x width (1)
-		projected_embed = projected_embed.unsqueeze(2).unsqueeze(3)
-		latent_vec = torch.cat([projected_embed, noise], 1)
-		output = self.generator(latent_vec)
+		# Concatenate the projected embedding and the noise
+		X = torch.cat([text_embed, noise], 1)
+		X = self.g_embedder(X)
+		X = X.view(X.size(0), self.options['num_gf'], 8, 8)
+		X = self.generator(X)
 
-		return output
+		return X
 
 
 class CondBeganDiscriminator(nn.Module):
@@ -677,62 +640,62 @@ class CondBeganDiscriminator(nn.Module):
 		if self.options['verbose']: print('Creating COND BEGAN Discriminator...')
 
 		# Discriminator layers for the input of the image
-		self.discriminator_encoder = nn.Sequential(
+		self.d_encoder = nn.Sequential(
 			# Input Dim: batch_size x (num_channels) x 128 x 128
-			nn.Conv2d(self.options['image_channels'], self.options['num_df'], 3, 1, 1),
+			nn.Conv2d(self.options['image_channels'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
 			nn.ELU(inplace=True),
-			cond_conv_block(self.options['num_df'], self.options['num_df']),
+			# Dim: batch_size x (num_df) x 128 x 128
+			conv_block(self.options['num_df'], self.options['num_df']),
 			# Dim: batch_size x (num_df) x 64 x 64
-			cond_conv_block(self.options['num_df'], self.options['num_df'] * 2),
+			conv_block(self.options['num_df'], self.options['num_df'] * 2),
 			# Dim: batch_size x (num_df * 2) x 32 x 32
-			cond_conv_block(self.options['num_df'] * 2, self.options['num_df'] * 4),
-			# Dim: batch_size x (num_df * 4) x 16 x 16
-			cond_conv_block(self.options['num_df'] * 4, self.options['num_df'] * 8),
-			# Dim: batch_size x (num_df * 8) x 8 x 8
-			cond_conv_block(self.options['num_df'] * 8, self.options['num_df'] * 16),
-			# Dim: batch_size x (num_df * 16) x 4 x 4
-			nn.Conv2d(self.options['num_df'] * 16, self.options['num_df'] * 16, 3, 1, 1),
+			conv_block(self.options['num_df'] * 2, self.options['num_df'] * 3),
+			# Dim: batch_size x (num_df * 3) x 16 x 16
+			conv_block(self.options['num_df'] * 3, self.options['num_df'] * 4),
+			# Dim: batch_size x (num_df * 4) x 8 x 8
+			nn.Conv2d(self.options['num_df'] * 4, self.options['num_df'] * 4, kernel_size=3, stride=1, padding=1),
 			nn.ELU(inplace=True),
-			# Dim: batch_size x (num_df * 16) x 4 x 4
-			nn.Conv2d(self.options['num_df'] * 16, self.options['num_df'] * 16, 3, 1, 1),
-			nn.ELU(inplace=True),
-			# Dim: batch_size x (num_df * 16) x 4 x 4
+			# Dim: batch_size x (num_df * 4) x 8 x 8
+			nn.Conv2d(self.options['num_df'] * 4, self.options['num_df'] * 4, kernel_size=3, stride=1, padding=1),
+			nn.ELU(inplace=True)
+			# Dim: batch_size x (num_df * 4) x 8 x 8
 		)
 
 		if self.options['verbose']: print('COND BEGAN Discriminator Input Created')
 
-		# Discriminator layers for the projection of the text embedding
-		self.d_projector = nn.Sequential(
-		    nn.Linear(in_features=self.options['caption_vec_len'], out_features=self.options['t_dim']),
-			nn.BatchNorm1d(num_features=self.options['t_dim']),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True)
-		)
+		# Discriminator layers the embedding of the hidden vector
+		# Input Dim: batch_size x (num_df * 4 * 8 * 8)
+		self.d_embedder = nn.Linear(self.options['num_df'] * 4 * 8 * 8, self.options['began_hidden_size'])
+		# Dim: batch_size x (hidden_size)
+
+		# Embedder for the combined hidden vector and conditional text caption vector
+		# Input Dim: batch_size x (hidden_size + caption_vec_len)
+		self.d_combined_embedder = nn.Linear(self.options['began_hidden_size'] + self.options['caption_vec_len'], self.options['num_df'] * 8 * 8)
+        # Dim: batch_size x (num_df * 8 * 8)
 
 		if self.options['verbose']: print('COND BEGAN Discriminator Projector Created')
 
 		# Discriminator upsample layers for the concatenation of the text embedding and image to output an image
 		# Reconstructs the image
-		self.discriminator_decoder = nn.Sequential(
-			# Input Dim: batch_size x (num_df * 16 + t_dim) x 4 x 4
-			cond_upsample_conv_block(self.options['num_df'] * 16 + self.options['t_dim'], self.options['num_df'] * 16, 2),
-			# Dim: batch_size x (num_gf * 16) x 8 x 8
-			cond_upsample_conv_block(self.options['num_df'] * 16, self.options['num_df'] * 8, 2),
-			# Dim: batch_size x (num_gf * 8) x 16 x 16
-			cond_upsample_conv_block(self.options['num_df'] * 8, self.options['num_df'] * 4, 2),
-			# Dim: batch_size x (num_gf * 4) x 32 x 32
-			cond_upsample_conv_block(self.options['num_df'] * 4, self.options['num_df'] * 2, 2),
-			# Dim: batch_size x (num_gf * 2) x 64 x 64
-			cond_upsample_conv_block(self.options['num_df'] * 2, self.options['num_df'], 2),
-			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['num_df'], 3, 1, 1),
-			nn.ELU(inplace=True),
-			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['num_df'], 3, 1, 1),
-			nn.ELU(inplace=True),
-			# Dim: batch_size x (num_gf) x 128 x 128
-			nn.Conv2d(self.options['num_df'], self.options['image_channels'], 3, 1, 1),
-			# Dim: batch_size x (num_image_channels) x 128 x 128
-			nn.Tanh()
+		self.d_decoder = nn.Sequential(
+			# Input Dim: batch_size x (num_df) x 8 x 8
+            upsample_conv_block(self.options['num_df'], self.options['num_df']),
+            # Dim: batch_size x (num_df) x 16 x 16
+            upsample_conv_block(self.options['num_df'], self.options['num_df']),
+            # Dim: batch_size x (num_df) x 32 x 32
+            upsample_conv_block(self.options['num_df'], self.options['num_df']),
+            # Dim: batch_size x (num_df) x 64 x 64
+            upsample_conv_block(self.options['num_df'], self.options['num_df']),
+            # Dim: batch_size x (num_df) x 128 x 128
+            nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
+            nn.ELU(inplace=True),
+            # Dim: batch_size x (num_df) x 128 x 128
+            nn.Conv2d(self.options['num_df'], self.options['num_df'], kernel_size=3, stride=1, padding=1),
+            nn.ELU(inplace=True),
+            # Dim: batch_size x (num_df) x 128 x 128
+            nn.Conv2d(self.options['num_df'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
+            # Dim: batch_size x (num_channels) x 128 x 128
+            nn.Tanh()
 		)
 
 		if self.options['verbose']: print('COND BEGAN Discriminator Output Created')
@@ -741,12 +704,12 @@ class CondBeganDiscriminator(nn.Module):
 
 	# COND BEGAN Discriminator Forward Propagation
 	def forward(self, images, text_embed):
-		images_intermediate = self.discriminator_encoder(images)
-		projected_embed = self.d_projector(text_embed)
-		# Repeat the projected dimensions and change the permutations
-		# Dim: batch_size x 256 -> batch_size x 256 x 4 x 4
-		replicated_embed = projected_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
-		latent_vec = torch.cat([images_intermediate, replicated_embed], 1)
-		output = self.discriminator_decoder(latent_vec)
+		X = self.d_encoder(images)
+		X = X.view(X.size(0), self.options['num_df'] * 4 * 8 * 8)
+		X = self.d_embedder(X)
+		X = torch.cat([X, text_embed], 1)
+		X = self.d_combined_embedder(X)
+		X = X.view(X.size(0), self.options['num_df'], 8, 8)
+		X = self.d_decoder(X)
 
-		return output
+		return X
