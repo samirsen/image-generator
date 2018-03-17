@@ -57,6 +57,14 @@ def upsample_conv_block(input_dim, output_dim):
      )
 
 
+def upsample_bn_conv_block(input_dim, output_dim):
+	return nn.Sequential(
+        nn.Conv2d(input_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Upsample(scale_factor=2)
+     )
 
 '''
 DCGAN Model
@@ -84,25 +92,48 @@ class Generator(nn.Module):
 			# Generator inputs concated word embedding and noise vector (latent vector) and outputs image
 			self.generator = nn.Sequential(
 				# Input Dim: batch_size x (concat_dim) x 1 x 1
-				upsample_conv_block(self.options['concat_dim'], self.options['num_gf'] * 16),
-				# Dim: batch_size x (num_gf * 16) x 2 x 2
-				upsample_conv_block(self.options['num_gf'] * 16, self.options['num_gf'] * 16),
-				# Dim: batch_size x (num_gf * 16) x 4 x 4
-				upsample_conv_block(self.options['num_gf'] * 16, self.options['num_gf'] * 8),
-				# Dim: batch_size x (num_gf * 8) x 8 x 8
-				upsample_conv_block(self.options['num_gf'] * 8, self.options['num_gf'] * 4),
-				# Dim: batch_size x (num_gf * 4) x 16 x 16
-				upsample_conv_block(self.options['num_gf'] * 4, self.options['num_gf'] * 2),
-				# Dim: batch_size x (num_gf * 2) x 32 x 32
-				upsample_conv_block(self.options['num_gf'] * 2, self.options['num_gf']),
+				nn.Conv2d(self.options['concat_dim'], self.options['num_gf'] * 16, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 16),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 16) x 1 x 1
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 8),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 8) x 2 x 2
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 4),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 4) x 4 x 4
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 2),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 2) x 8 x 8
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'] * 2, self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 16 x 16
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 32 x 32
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 64 x 64
-				upsample_conv_block(self.options['num_gf'], self.options['num_gf']),
+				nn.Upsample(scale_factor=2)
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 128 x 128
 				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
-	            nn.ELU(inplace=True),
-				# Dim: batch_size x (num_gf) x 128 x 128
-				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
-	            nn.ELU(inplace=True),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 128 x 128
 				nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
 				nn.Tanh()

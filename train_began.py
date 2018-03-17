@@ -86,7 +86,7 @@ def main():
     ########## VARIABLES ##########
     noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'])
     text_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
-    real_img = torch.FloatTensor(constants.BATCH_SIZE, constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+    real_img = torch.FloatTensor(constants.BATCH_SIZE, model_options['image_channels'], constants.IMAGE_SIZE, constants.IMAGE_SIZE)
     real_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
 
     # Add cuda GPU option
