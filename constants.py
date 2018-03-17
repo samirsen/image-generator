@@ -46,14 +46,20 @@ REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
 USE_CLS = False
+# Real loss sensitivity
+# Penalizes G and help D when the D output of fake image differs from real image input
+USE_REAL_LS = True
+# Use upsampling instead of convtranpose for DCGAN
+USE_UPSAMPLE = True
+
 
 # The different models to use
 # 'dcgan', 'wgan', 'began'
+# OBSOLETE because we have separate training files for each
 USE_MODEL = 'began'
-
 ##### END MODEL OPTIONS #####
 
-FLOWERS_IMG_DICT = 'Data/flower_images.torch' 
+FLOWERS_IMG_DICT = 'Data/flower_images.torch'
 
 FLOWERS_DICTS_PATH = 'Data/flowers_dicts.torch'
 # SAVE PATH FOR MODLE OPTIONS
@@ -110,6 +116,8 @@ MAIN_MODEL_OPTIONS = {
     'label_smooth':0.1,             # One-sided label smoothing for the real labels
                                     # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
                                     # https://arxiv.org/pdf/1606.03498.pdf
+    # Upsampling option (instead of convtranspose for removing weird patterns in images)
+    'use_upsample':USE_UPSAMPLE,
     # CLS (Conditional Loss Sensitivity) Options
     'use_cls':USE_CLS,
     # WGAN Options

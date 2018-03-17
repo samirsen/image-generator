@@ -33,7 +33,38 @@ from util import *
     began_lambda_k : Learning rate for k of BEGAN model
 '''
 
+'''
+General Model Layers
+'''
+def conv_block(input_dim, output_dim):
+    return nn.Sequential(
+        nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
+        nn.ELU(inplace=True),
+        nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
+        nn.ELU(inplace=True),
+        nn.Conv2d(input_dim, output_dim, kernel_size=1, stride=1, padding=0),
+        nn.AvgPool2d(kernel_size=2, stride=2)
+    )
 
+# Convolution and upsample doubles size of image (instead of convtranspose)
+def upsample_conv_block(input_dim, output_dim):
+    return nn.Sequential(
+        nn.Conv2d(input_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Upsample(scale_factor=2)
+     )
+
+
+def upsample_bn_conv_block(input_dim, output_dim):
+	return nn.Sequential(
+        nn.Conv2d(input_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
+        nn.ELU(inplace=True),
+        nn.Upsample(scale_factor=2)
+     )
 
 '''
 DCGAN Model
@@ -57,62 +88,100 @@ class Generator(nn.Module):
 
 		if self.options['verbose']: print('Generator Projector Created')
 
-		# Generator inputs concated word embedding and noise vector (latent vector) and outputs image
-		self.generator = nn.Sequential(
-			# Input Dim: batch_size x (concat_dim) x 1 x 1
-			nn.ConvTranspose2d(self.options['concat_dim'], self.options['num_gf'] * 16, 4, 1, 0, bias=False),
-			nn.BatchNorm2d(self.options['num_gf'] * 16),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
-			# Dim: batch_size x (num_gf * 16) x 4 x 4
-			nn.ConvTranspose2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, 4, 2, 1, bias=False),
-			nn.BatchNorm2d(self.options['num_gf'] * 8),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
-			# Dim: batch_size x (num_gf * 8) x 8 x 8
-			nn.ConvTranspose2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, 4, 2, 1, bias=False),
-			nn.BatchNorm2d(self.options['num_gf'] * 4),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
-			# Dim: batch_size x (num_gf * 4) x 16 x 16
-			nn.ConvTranspose2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, 4, 2, 1, bias=False),
-			nn.BatchNorm2d(self.options['num_gf'] * 2),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
-			# Dim: batch_size x (num_gf * 2) x 32 x 32
-			nn.ConvTranspose2d(self.options['num_gf'] * 2, self.options['num_gf'], 4, 2, 1, bias=False),
-			nn.BatchNorm2d(self.options['num_gf']),
-			nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
-			# Dim: batch_size x (num_gf) x 64 x 64
-			nn.ConvTranspose2d(self.options['num_gf'], self.options['image_channels'], 4, 2, 1, bias=False),
-			nn.Tanh()
-			# Dim: batch_size x (num_channels) x 128 x 128
-		)
+		if self.options['use_upsample']:
+			# Generator inputs concated word embedding and noise vector (latent vector) and outputs image
+			self.generator = nn.Sequential(
+				# Input Dim: batch_size x (concat_dim) x 1 x 1
+				nn.Conv2d(self.options['concat_dim'], self.options['num_gf'] * 16, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 16),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 16) x 1 x 1
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 8),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 8) x 2 x 2
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 4),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 4) x 4 x 4
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf'] * 2),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 2) x 8 x 8
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'] * 2, self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 16 x 16
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 32 x 32
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 64 x 64
+				nn.Upsample(scale_factor=2),
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 128 x 128
+				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 128 x 128
+				nn.Conv2d(self.options['num_gf'], self.options['image_channels'], kernel_size=3, stride=1, padding=1),
+				nn.Tanh()
+				# Dim: batch_size x (num_channels) x 128 x 128
+			)
+		else:
+			# Generator inputs concated word embedding and noise vector (latent vector) and outputs image
+			self.generator = nn.Sequential(
+				# Input Dim: batch_size x (concat_dim) x 1 x 1
+				nn.ConvTranspose2d(self.options['concat_dim'], self.options['num_gf'] * 16, 4, 1, 0, bias=False),
+				nn.BatchNorm2d(self.options['num_gf'] * 16),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 16) x 4 x 4
+				nn.ConvTranspose2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, 4, 2, 1, bias=False),
+				nn.BatchNorm2d(self.options['num_gf'] * 8),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 8) x 8 x 8
+				nn.ConvTranspose2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, 4, 2, 1, bias=False),
+				nn.BatchNorm2d(self.options['num_gf'] * 4),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 4) x 16 x 16
+				nn.ConvTranspose2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, 4, 2, 1, bias=False),
+				nn.BatchNorm2d(self.options['num_gf'] * 2),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf * 2) x 32 x 32
+				nn.ConvTranspose2d(self.options['num_gf'] * 2, self.options['num_gf'], 4, 2, 1, bias=False),
+				nn.BatchNorm2d(self.options['num_gf']),
+				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
+				# Dim: batch_size x (num_gf) x 64 x 64
+				nn.ConvTranspose2d(self.options['num_gf'], self.options['image_channels'], 4, 2, 1, bias=False),
+				nn.Tanh()
+				# Dim: batch_size x (num_channels) x 128 x 128
+			)
 
 		if self.options['verbose']: print('Generator Created\n')
 
 
 	# Generator Forward Propagation
 	def forward(self, text_embed, noise):
-		projected_embed = self.g_projector(text_embed)
+		X = self.g_projector(text_embed)
 		# Add dimension 2 and 3 to make projected embed into 4 dimension
 		# batch_size x num_channels x height (1) x width (1)
-		projected_embed = projected_embed.unsqueeze(2).unsqueeze(3)
-		latent_vec = torch.cat([projected_embed, noise], 1)
-		output = self.generator(latent_vec)
+		X = X.unsqueeze(2).unsqueeze(3)
+		X = torch.cat([X, noise], 1)
+		X = self.generator(X)
 
-		return output
+		return X
 
-
-	# Generator Loss
-	# L_G = log(y_f)
-	def loss(self, fake_img_passed):
-		g_loss = f.binary_cross_entropy(fake_img_passed, torch.ones_like(fake_img_passed))
-
-		return g_loss
-
-	# Calculates the grad of g
-	def calc_grad_g(self, new_fake_img_passed):
-		g_loss = self.loss(new_fake_img_passed)
-		g_loss.backward()
-
-		return g_loss
 
 class Discriminator(nn.Module):
 	def __init__(self, options):
@@ -172,49 +241,17 @@ class Discriminator(nn.Module):
 
 	# Discriminator Forward Propagation
 	def forward(self, images, text_embed):
-		images_intermediate = self.discriminator_input(images)
-		projected_embed = self.d_projector(text_embed)
+		X = self.discriminator_input(images)
+		text_embed = self.d_projector(text_embed)
 		# Repeat the projected dimensions and change the permutations
 		# Dim: batch_size x 256 -> batch_size x 256 x 4 x 4
-		replicated_embed = projected_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
-		latent_vec = torch.cat([images_intermediate, replicated_embed], 1)
-		output = self.discriminator_output(latent_vec)
+		text_embed = text_embed.repeat(4, 4, 1, 1).permute(2, 3, 0, 1)
+		X = torch.cat([X, text_embed], 1)
+		X = self.discriminator_output(X)
 		# Squeeze dims: batch_size x 1 x 1 x 1 -> batch_size
-		output = output.view(-1, 1).squeeze(1)
+		X = X.view(-1, 1).squeeze(1)
 
-		return output
-
-
-	# Overall loss function for discriminator
-	# L_D = log(y_r) + log(1 - y_f)
-	# Loss of Vanilla GAN with CLS
-	# log(1 - y_w) is the caption loss sensitivity CLS (makes sure that captions match the image)
-	# L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
-	def loss(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
-		# Add one-sided label smoothing to the real images of the discriminator
-		d_real_loss = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - self.options['label_smooth'])
-		d_fake_loss = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
-
-		d_loss = d_real_loss + d_fake_loss
-
-		# option to use conditional loss sensitivity
-		if self.options['use_cls']:
-			d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
-			d_loss += d_wrong_loss
-
-
-		return d_loss
-
-	# Calculates the gradients for the D and returns the D loss
-	def calc_grad_d(self, real_img_passed, fake_img_passed, wrong_img_passed=None):
-	    if self.options['use_cls']:
-	        d_loss = self.loss(real_img_passed, fake_img_passed, wrong_img_passed)
-	    else:
-	        d_loss = self.loss(real_img_passed, fake_img_passed)
-
-	    d_loss.backward()
-
-	    return d_loss
+		return X
 
 
 '''
@@ -422,27 +459,6 @@ https://arxiv.org/pdf/1703.10717.pdf
 https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/models.py
 https://github.com/carpedm20/BEGAN-pytorch
 '''
-
-def conv_block(input_dim, output_dim):
-    return nn.Sequential(
-        nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
-        nn.ELU(inplace=True),
-        nn.Conv2d(input_dim, input_dim, kernel_size=3, stride=1, padding=1),
-        nn.ELU(inplace=True),
-        nn.Conv2d(input_dim, output_dim, kernel_size=1, stride=1, padding=0),
-        nn.AvgPool2d(kernel_size=2, stride=2)
-    )
-
-# Convolution and upsample doubles size of image (instead of convtranspose)
-def upsample_conv_block(input_dim, output_dim):
-    return nn.Sequential(
-        nn.Conv2d(input_dim, output_dim,kernel_size=3,stride=1,padding=1),
-        nn.ELU(inplace=True),
-        nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
-        nn.ELU(inplace=True),
-        nn.Upsample(scale_factor=2)
-     )
-
 class BeganGenerator(nn.Module):
     def __init__(self, options):
         super(BeganGenerator,self).__init__()
