@@ -46,7 +46,7 @@ REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
 USE_CLS = True
-# Use upsampling instead of convtranpose for dcgan
+# Use upsampling instead of convtranpose for DCGAN
 USE_UPSAMPLE = True
 # The different models to use
 # 'dcgan', 'wgan', 'began'
@@ -67,7 +67,7 @@ PRINT_MODEL_STATUS = True
 # Number of epochs to run the training
 NUM_EPOCHS = 1000
 # The batch size for training
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 # How often to save losses
 LOSS_SAVE_IDX = 1
 
