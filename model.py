@@ -96,37 +96,37 @@ class Generator(nn.Module):
 				nn.BatchNorm2d(self.options['num_gf'] * 16),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf * 16) x 1 x 1
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'] * 16, self.options['num_gf'] * 8, kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf'] * 8),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf * 8) x 2 x 2
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'] * 8, self.options['num_gf'] * 4, kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf'] * 4),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf * 4) x 4 x 4
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'] * 4, self.options['num_gf'] * 2, kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf'] * 2),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf * 2) x 8 x 8
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'] * 2, self.options['num_gf'], kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf']),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 16 x 16
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf']),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 32 x 32
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf']),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
 				# Dim: batch_size x (num_gf) x 64 x 64
-				nn.Upsample(scale_factor=2)
+				nn.Upsample(scale_factor=2),
 				nn.Conv2d(self.options['num_gf'], self.options['num_gf'], kernel_size=3, stride=1, padding=1),
 				nn.BatchNorm2d(self.options['num_gf']),
 				nn.LeakyReLU(negative_slope=self.options['leak'], inplace=True),
