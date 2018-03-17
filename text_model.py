@@ -19,7 +19,7 @@ class TextModel(nn.Module):
 		self.glove = Glove()
 		self._GloVe = self.glove.get_embeddings()
 		self.embeddings = nn.EmbeddingBag(constants.VOCAB_SIZE, constants.EMBED_DIM, mode=constants.REDUCE_TYPE)
-		self.embeddings.weight = nn.Parameter(self._GloVe)
+		# self.embeddings.weight = nn.Parameter(torch.tensor(self._GloVe))
 
 
 	def forward(self, batch_input):
@@ -54,13 +54,13 @@ class LSTM_Model(nn.Module):
 		self.biRNN = nn.LSTM(input_size=constants.EMBED_DIM, hidden_size=constants.HIDDEN_DIM,
 						num_layers=1, batch_first=True, bidirectional=False)
 
-		self.hidden = self.init_hidden(minibatch_size=1)
+		self.hidden = self.init_hidden(minibatch_size=constants.BATCH_SIZE)
 
 	def init_hidden(self, minibatch_size):
 		# Before we've done anything, we dont have any hidden state.
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
-		return (Variable(torch.zeros(1, minibatch_size, constants.HIDDEN_DIM)),
-                Variable(torch.zeros(1, minibatch_size, constants.HIDDEN_DIM)))
+		return (Variable(nn.init.xavier_uniform(1, minibatch_size, constants.HIDDEN_DIM)),
+                Variable(nn.init.xavier_uniform(1, minibatch_size, constants.HIDDEN_DIM)))
 
 
 	def forward(self, batch_input):
