@@ -48,9 +48,9 @@ REGEN_IMAGE = True
 USE_CLS = False
 # Real loss sensitivity
 # Penalizes G and help D when the D output of fake image differs from real image input
-USE_REAL_LS = True
+USE_REAL_LS = False
 # Use upsampling instead of convtranpose for DCGAN
-USE_UPSAMPLE = True
+USE_UPSAMPLE = False
 
 
 # The different models to use
