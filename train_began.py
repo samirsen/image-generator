@@ -184,6 +184,7 @@ def main():
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
 
             num_iterations += 1
+            break
 
         print ('Total number of iterations: ', num_iterations)
         print ('Training G Loss: ', g_loss.data[0])
@@ -247,6 +248,7 @@ def main():
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['val']['generator'].append((g_loss.data[0], epoch, i))
                 losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
+            break
 
         print ('Val G Loss: ', g_loss.data[0])
         print ('Val D Loss: ', d_loss.data[0])
