@@ -19,7 +19,7 @@ class TextModel(nn.Module):
 		self.glove = Glove()
 		self._GloVe = self.glove.get_embeddings()
 		self.embeddings = nn.EmbeddingBag(constants.VOCAB_SIZE, constants.EMBED_DIM, mode=constants.REDUCE_TYPE)
-		# self.embeddings.weight = nn.Parameter(torch.tensor(self._GloVe))
+		self.embeddings.weight = nn.Parameter(torch.tensor(self._GloVe))
 
 
 	def forward(self, batch_input):

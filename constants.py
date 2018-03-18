@@ -99,7 +99,8 @@ HIDDEN_DIM = 4800
 REDUCE_TYPE = 'mean'
 # Number of embeddings in Glove
 VOCAB_SIZE = 400000
-
+# path to the glove vectors
+GLOVE_PATH = 'Data/vocab/glove.6B.{}d.txt'.format(EMBED_DIM)
 
 
 # Options for the main model
