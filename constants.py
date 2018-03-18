@@ -70,12 +70,13 @@ PRINT_MODEL_STATUS = True
 
 # TRAINING OPTIONS
 # Number of epochs to run the training
-NUM_EPOCHS = 1000
+NUM_EPOCHS = 2000
 # The batch size for training
 BATCH_SIZE = 2
 # How often to save losses
 LOSS_SAVE_IDX = 1
-
+# How often to save checkpoint
+CHECKPOINT_FREQUENCY = 50
 
 # Optimizer options
 # True if optimizer will be stochastic gradient descent
