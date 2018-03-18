@@ -1,4 +1,16 @@
 """Batch the glove embeddings for the generator"""
+from __future__ import absolute_import
+from __future__ import division
+
+import random
+import time
+import re
+
+import numpy as np
+from six.moves import xrange
+from vocab import PAD_ID, UNK_ID
+
+import torch
 
 
 def split_by_whitespace(sentence):
@@ -33,4 +45,28 @@ def padded(token_batch, batch_pad=0):
         All are same length - batch_pad if batch_pad!=0, otherwise the maximum length in token_batch
     """
     maxlen = max(map(lambda x: len(x), token_batch)) if batch_pad == 0 else batch_pad
-    return map(lambda token_list: token_list + [PAD_ID] * (maxlen - len(token_list)), token_batch)
+    masks = map(lambda x: [1] * len(x) + [0] * (maxlen - len(x)), token_batch)
+    return map(lambda token_list: token_list + [PAD_ID] * (maxlen - len(token_list)), token_batch), masks
+
+def get_text_description(caption_dict, batch_keys):
+    g_idx = [np.random.randint(len(caption_dict[batch_keys[0]])) for i in range(len(batch_keys))]
+    g_text_des = [caption_dict[k][i] for k,i in zip(batch_keys, g_idx)]
+
+    return g_text_des
+
+def get_captions_batch(batch_keys, caption_dict, word2id):
+    """
+    Inputs:
+        caption_dict: filename --> caption (dictionary)
+        batch_keys: filenames in the batch
+    Returns:
+        batch of indices representing each sentence
+    """
+    tokens_batch = []
+    raw_batch = get_text_description(caption_dict, batch_keys)
+    for capt in raw_batch:
+        tokens, ids = sentence_to_token_ids(capt, word2id)
+        tokens_batch.append(ids)
+
+    captions_batch, masks = padded(tokens_batch)
+    return captions_batch, masks

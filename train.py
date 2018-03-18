@@ -9,6 +9,7 @@ from torch.autograd import Variable
 import constants
 from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
 from lstm_model import LSTM_Model
+from vocab import get_glove
 from util import *
 from captions_utils import *
 from train_utils import *
@@ -23,10 +24,12 @@ def main():
     make_save_dir(output_path)
 
     model_options = constants.MAIN_MODEL_OPTIONS
-    caption_dict = load_flowers_capt_dict(data_dir='Data')
-    img_dict = load_image_dict()
+    caption_dict = load_flowers_capt_dict(data_dir='Data')   # filename --> [captions]
+    img_dict = load_image_dict()   # filename --> 28 x 28 image
 
-    lstm_model, lstm_optim = init_txt_model(model_options)
+    emb_matrix, word2id, id2word = get_glove(constants.GLOVE_PATH, constants.EMBED_DIM) 
+
+    # lstm_model, lstm_optim = init_txt_model(model_options)
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
 

@@ -188,7 +188,6 @@ def main():
                 losses['train']['converge'].append((convergence_val.data[0], epoch, i))
 
             num_iterations += 1
-            break
 
         print ('Total number of iterations: ', num_iterations)
         print ('Training G Loss: ', g_loss.data[0])

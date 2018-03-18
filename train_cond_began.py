@@ -336,7 +336,6 @@ def main():
                 losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
                 losses['val']['converge'].append((convergence_val.data[0], epoch, i))
 
-
         print ('Val G Loss: ', g_loss.data[0])
         print ('Val D Loss: ', d_loss.data[0])
         print ('Val Convergence: ', convergence_val.data[0])
