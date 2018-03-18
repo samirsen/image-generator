@@ -5,7 +5,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import constants
 from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
-from lstm_model import LSTM_Model
+from lstm_model import LSTM
 from vocab import get_glove
 from util import *
 from captions_utils import *
@@ -45,6 +45,7 @@ def main():
     # print len(img_dict)
     #
     # print (embeddings[5, :])
+    lstm = LSTM(model_options, embeddings)
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
@@ -52,6 +53,7 @@ def main():
     ################################
     # Now get batch of captions and glove embeddings
     # Use this batch as input to BiRNN w LSTM cells
+    # TODO: Loop over epochs in constants.NUM_EPOCHS
     ################################
     st = time.time()
     for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
@@ -61,7 +63,20 @@ def main():
         init_model(discriminator, generator)
 
         captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
-        
+        # captions_batch = np.array(captions_batch, dtype=np.int64)
+
+        # print "Captions batch: ", captions_batch.shape
+        # inputs_batch = torch.LongTensor(captions_batch)
+        # print('type: ', type(inputs_batch[0][0]))
+        # print "Long Tensor: ", inputs_batch
+
+
+        caption_embeds = lstm.forward(captions_batch, masks)
+        print ( "Here are the embeddings, ", caption_embeds )
+        break
+
+
+
 
 
 
