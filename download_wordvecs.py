@@ -4,6 +4,7 @@ import zipfile
 import argparse
 import os
 from tqdm import tqdm
+from six.moves.urllib.request import urlretrieve
 
 def maybe_download(url, filename, prefix, num_bytes=None):
     """Takes an URL, a filename, and the expected bytes, download
