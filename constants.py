@@ -72,7 +72,7 @@ PRINT_MODEL_STATUS = True
 # Number of epochs to run the training
 NUM_EPOCHS = 1000
 # The batch size for training
-BATCH_SIZE = 64
+BATCH_SIZE = 2
 # How often to save losses
 LOSS_SAVE_IDX = 1
 

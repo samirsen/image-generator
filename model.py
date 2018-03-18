@@ -456,9 +456,13 @@ class BeganGenerator(nn.Module):
 
         self.options = options
         # Dimensions of the latent vector (concatenate original embedding vector and noise vector)
-        self.options['concat_dim'] = self.options['caption_vec_len'] + self.options['z_dim']
+        self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
 
         if self.options['verbose']: print('\nCreating BEGAN Generator...')
+
+		# Input Dim: batch_size x (caption_vec_len)
+        self.text_embedder = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+		# Input Dim: batch_size x (t_dim)
 
         # Input Dim: batch_size x (concat_dim)
         self.g_embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
@@ -491,7 +495,8 @@ class BeganGenerator(nn.Module):
 
     def forward(self, text_embed, noise):
 		# Concatenate the projected embedding and the noise
-		X = torch.cat([text_embed, noise], 1)
+		X = self.text_embedder(text_embed)
+		X = torch.cat([X, noise], 1)
 		X = self.g_embedder(X)
 		X = X.view(X.size(0), self.options['num_gf'], 8, 8)
 		X = self.generator(X)
@@ -593,12 +598,16 @@ class CondBeganGenerator(nn.Module):
 
 		self.options = options
         # Dimensions of the latent vector (concatenate original embedding vector and noise vector)
-		self.options['concat_dim'] = self.options['caption_vec_len'] + self.options['z_dim']
+		self.options['concat_dim'] = self.options['t_dim'] + self.options['z_dim']
 
 		if self.options['verbose']: print('\nCreating CONDITIONAL BEGAN Generator...')
 
-        # Input Dim: batch_size x (concat_dim)
-		self.g_embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
+        # Input Dim: batch_size x (caption_vec_len)
+		self.g_embedder = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+		# Dim: batch_size x (t_dim)
+
+		# Input Dim: batch_size x (concat_dim)
+		self.g_concat_embedder = nn.Linear(self.options['concat_dim'], self.options['num_gf'] * 8 * 8)
         # Dim: batch_size x (num_gf * 8 * 8)
 
 		if self.options['verbose']: print('CONDITIONAL BEGAN Generator Embedder Created')
@@ -628,8 +637,9 @@ class CondBeganGenerator(nn.Module):
 
 	def forward(self, text_embed, noise):
 		# Concatenate the projected embedding and the noise
-		X = torch.cat([text_embed, noise], 1)
-		X = self.g_embedder(X)
+		X = self.g_embedder(text_embed)
+		X = torch.cat([X, noise], 1)
+		X = self.g_concat_embedder(X)
 		X = X.view(X.size(0), self.options['num_gf'], 8, 8)
 		X = self.generator(X)
 
@@ -675,9 +685,14 @@ class CondBeganDiscriminator(nn.Module):
 		self.d_embedder = nn.Linear(self.options['num_df'] * 4 * 8 * 8, self.options['began_hidden_size'])
 		# Dim: batch_size x (hidden_size)
 
+		# Embedder for the input text vector
+		# Input Dim: batch_size x (caption_vec_len)
+		self.text_embedder = nn.Linear(self.options['caption_vec_len'], self.options['t_dim'])
+		# Dim: batch_size x (t_dim)
+
 		# Embedder for the combined hidden vector and conditional text caption vector
-		# Input Dim: batch_size x (hidden_size + caption_vec_len)
-		self.d_combined_embedder = nn.Linear(self.options['began_hidden_size'] + self.options['caption_vec_len'], self.options['num_df'] * 8 * 8)
+		# Input Dim: batch_size x (hidden_size + t_dim)
+		self.d_combined_embedder = nn.Linear(self.options['began_hidden_size'] + self.options['t_dim'], self.options['num_df'] * 8 * 8)
         # Dim: batch_size x (num_df * 8 * 8)
 
 		if self.options['verbose']: print('COND BEGAN Discriminator Projector Created')
@@ -714,7 +729,8 @@ class CondBeganDiscriminator(nn.Module):
 		X = self.d_encoder(images)
 		X = X.view(X.size(0), self.options['num_df'] * 4 * 8 * 8)
 		X = self.d_embedder(X)
-		X = torch.cat([X, text_embed], 1)
+		new_text_embed = self.text_embedder(text_embed)
+		X = torch.cat([X, new_text_embed], 1)
 		X = self.d_combined_embedder(X)
 		X = X.view(X.size(0), self.options['num_df'], 8, 8)
 		X = self.d_decoder(X)
