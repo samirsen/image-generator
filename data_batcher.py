@@ -1,5 +1,4 @@
-"""Batch the glove embeddings for the generator""" 
-
+"""Batch the glove embeddings for the generator"""
 
 
 def split_by_whitespace(sentence):

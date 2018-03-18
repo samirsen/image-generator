@@ -6,21 +6,14 @@ import torch.nn as nn
 import torch.nn.functional as f
 import torch.optim as optim
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
 import constants
 from model import Generator, Discriminator, BeganGenerator, BeganDiscriminator
-from text_model import TextModel, LSTM_Model
+from lstm_model import LSTM_Model
 from util import *
 from captions_utils import *
 from train_utils import *
 import numpy as np
 import matplotlib.pyplot as plt
-from itertools import izip_longest
-import scipy.misc
-import matplotlib.pyplot as plt
-import argparse
-import time
-import os
 
 # From https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
 # Iterates over an array in chunks
