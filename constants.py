@@ -95,6 +95,12 @@ IMAGE_SIZE = 128
 EMBED_DIM = 300
 # Size of hidden dim for LSTM
 HIDDEN_DIM = 4800
+# Number of layers in LSTM
+NUM_LAYERS = 1
+# Bidirectional option
+BIDIRECTIONAL = False
+# Num_directions is 2 only if bidirectional
+NUM_DIRECTIONS = 2 if BIDIRECTIONAL else 1 
 # Average or sum of glove vectors
 REDUCE_TYPE = 'mean'
 # Number of embeddings in Glove
