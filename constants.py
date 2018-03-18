@@ -94,7 +94,7 @@ IMAGE_SIZE = 128
 # Size of GloVe Embeddings
 EMBED_DIM = 300
 # Size of hidden dim for LSTM
-HIDDEN_DIM = EMBED_DIM
+HIDDEN_DIM = 4800
 # Average or sum of glove vectors
 REDUCE_TYPE = 'mean'
 # Number of embeddings in Glove

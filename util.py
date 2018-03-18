@@ -13,6 +13,7 @@ import os
 import cPickle as pickle
 import torch
 from itertools import izip_longest
+from glove import Glove
 
 
 # Makes the directories of they don't already exist
@@ -124,7 +125,6 @@ def load_images(directory, filenames, dataset_map):
 
     return train_image_dict, val_image_dict, test_image_dict
 
-
 # custom weights initialization called on netG and netD
 # from https://github.com/pytorch/examples/blob/master/dcgan/main.py
 def weights_init(m):
@@ -133,6 +133,9 @@ def weights_init(m):
         m.weight.data.normal_(0.0, 0.02)
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
+        m.bias.data.fill_(0)
+    elif classname.find('LSTM') != -1:
+        nn.init.xavier_uniform(m.weight)
         m.bias.data.fill_(0)
 
 def preprocess2(batch_input):
@@ -144,14 +147,25 @@ def preprocess2(batch_input):
 
 def preprocess(batch_input):
     """If batch_input isn't numpy"""
+    glove = Glove()
     flatten, offsets = [], []
     index = 0
     for ex in batch_input:
+        ex = ex.replace(',', ' ')
+        words = ex.strip('.').split()
+        result = []
+        for w in words:
+            try:
+                idx = glove.get_index(w)
+                result.append(idx)
+            except:
+                continue
+        # words = [glove.get_index(word) for word in words]
         offsets.append(index)
-        flatten.extend(ex)
-        index += len(ex)
+        flatten.extend(result)
+        index += len(result)
 
-    return flatten, offsets
+    return torch.LongTensor(flatten), torch.LongTensor(offsets)
 
 # https://github.com/sunshineatnoon/Paper-Implementations/blob/master/BEGAN/began.py
 def adjust_learning_rate(optimizer, niter):
