@@ -57,15 +57,6 @@ def upsample_conv_block(input_dim, output_dim):
      )
 
 
-def upsample_bn_conv_block(input_dim, output_dim):
-	return nn.Sequential(
-        nn.Conv2d(input_dim, output_dim,kernel_size=3,stride=1,padding=1),
-        nn.ELU(inplace=True),
-        nn.Conv2d(output_dim, output_dim,kernel_size=3,stride=1,padding=1),
-        nn.ELU(inplace=True),
-        nn.Upsample(scale_factor=2)
-     )
-
 '''
 DCGAN Model
 '''

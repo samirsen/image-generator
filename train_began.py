@@ -57,8 +57,8 @@ def main():
     ########## SAVED VARIABLES #########
     new_epoch = 0
     began_k = 0
-    train_losses = {"generator": [], "discriminator": []}
-    val_losses = {"generator": [], "discriminator": []}
+    train_losses = {"generator": [], "discriminator": [], "converge": []}
+    val_losses = {"generator": [], "discriminator": [], "converge": []}
     losses = {'train': train_losses, 'val': val_losses}
 
 
@@ -175,6 +175,9 @@ def main():
             g_loss.backward()
             g_optimizer.step()
 
+            # M = L(y_r) + |gamma * L(y_r) - L(y_f)|
+            convergence_val = d_real_loss + abs(balance)
+
             # learning rate decay
             g_optimizer = util.adjust_learning_rate(g_optimizer, num_iterations)
             d_optimizer = util.adjust_learning_rate(d_optimizer, num_iterations)
@@ -182,12 +185,16 @@ def main():
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
+                losses['train']['converge'].append((convergence_val.data[0], epoch, i))
 
             num_iterations += 1
+            break
 
         print ('Total number of iterations: ', num_iterations)
         print ('Training G Loss: ', g_loss.data[0])
         print ('Training D Loss: ', d_loss.data[0])
+        print ('Training Convergence: ', convergence_val.data[0])
+        print ('K value: ', began_k)
         epoch_time = time.time()-st
         print ("Time: ", epoch_time)
 
@@ -241,15 +248,22 @@ def main():
             d_fake_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
             d_loss = d_real_loss - began_k * d_fake_loss
 
+            balance = (model_options['began_gamma'] * d_real_loss - d_fake_loss).data[0]
+
             # Calculate G loss
             g_loss = torch.mean(torch.abs(fake_img_passed - gen_image))
+
+            # M = L(y_r) + |gamma * L(y_r) - L(y_f)|
+            convergence_val = d_real_loss + abs(balance)
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['val']['generator'].append((g_loss.data[0], epoch, i))
                 losses['val']['discriminator'].append((d_loss.data[0], epoch, i))
+                losses['val']['converge'].append((convergence_val.data[0], epoch, i))
 
         print ('Val G Loss: ', g_loss.data[0])
         print ('Val D Loss: ', d_loss.data[0])
+        print ('Val Convergence: ', convergence_val.data[0])
 
         # Save losses
         torch.save(losses, constants.SAVE_PATH + 'losses')
@@ -261,12 +275,18 @@ def main():
         vutils.save_image(gen_image[1].data.cpu(),
                     constants.SAVE_PATH + 'images/gen1_epoch' + str(epoch) + '.png',
                     normalize=True)
-        vutils.save_image(real_img_passed[0].data.cpu(),
-                    constants.SAVE_PATH + 'images/real_recon0_epoch' + str(epoch) + '.png',
+        vutils.save_image(fake_img_passed[0].data.cpu(),
+                    constants.SAVE_PATH + 'images/gen_recon0_epoch' + str(epoch) + '.png',
                     normalize=True)
-        vutils.save_image(real_img_passed[1].data.cpu(),
-                    constants.SAVE_PATH + 'images/real_recon1_epoch' + str(epoch) + '.png',
+        vutils.save_image(fake_img_passed[1].data.cpu(),
+                    constants.SAVE_PATH + 'images/gen_recon1_epoch' + str(epoch) + '.png',
                     normalize=True)
+        # vutils.save_image(real_img_passed[0].data.cpu(),
+        #             constants.SAVE_PATH + 'images/real_recon0_epoch' + str(epoch) + '.png',
+        #             normalize=True)
+        # vutils.save_image(real_img_passed[1].data.cpu(),
+        #             constants.SAVE_PATH + 'images/real_recon1_epoch' + str(epoch) + '.png',
+        #             normalize=True)
 
         # Save model
         if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:

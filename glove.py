@@ -5,10 +5,10 @@ captions and take average of words for a
 300 dimensional representation of caption.
 """
 
-# import torch
-# import torchtext.vocab as vocab
-# import numpy as np
-# import constants
+import torch
+import torchtext.vocab as vocab
+import numpy as np
+import constants
 
 class Glove:
     def __init__(self):
@@ -21,9 +21,12 @@ class Glove:
     def get_embeddings(self):
         return self._glove
 
+    def get_index(self, word):
+        return self._glove.stoi[word] 
+
     def get_word(self, word):
         """Returns vector representation for word"""
-        return self._glove.vectors[glove.stoi[word]]
+        return self._glove.vectors[self._glove.stoi[word]]
 
     def get_words(self, caption):
         """Returns numpy array of glove representations"""
