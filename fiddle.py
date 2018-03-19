@@ -37,14 +37,6 @@ def main():
 
     print ( "shape of embedding size: ", embeddings.size() )
 
-
-    # print len(word2id)
-    # print len(id2word)
-    #
-    # print len(caption_dict)
-    # print len(img_dict)
-    #
-    # print (embeddings[5, :])
     lstm = LSTM(model_options, embeddings)
 
     generator, discriminator = choose_model(model_options)
@@ -58,28 +50,24 @@ def main():
     st = time.time()
     for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
         batch_keys = [x for x in batch_iter if x is not None]
+
         noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
 
         init_model(discriminator, generator)
 
         captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
-        # captions_batch = np.array(captions_batch, dtype=np.int64)
+        captions_batch = np.array(captions_batch, dtype=np.int64)
 
         # print "Captions batch: ", captions_batch.shape
+        # print captions_batch
         # inputs_batch = torch.LongTensor(captions_batch)
         # print('type: ', type(inputs_batch[0][0]))
         # print "Long Tensor: ", inputs_batch
 
 
         caption_embeds = lstm.forward(captions_batch, masks)
-        print ( "Here are the embeddings, ", caption_embeds )
-        break
-
-
-
-
-
-
+        # print ( "Here are the embeddings, ", caption_embeds )
+        
 
 
 if __name__ == '__main__':

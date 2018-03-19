@@ -72,7 +72,7 @@ PRINT_MODEL_STATUS = True
 # Number of epochs to run the training
 NUM_EPOCHS = 1000
 # The batch size for training
-BATCH_SIZE = 2
+BATCH_SIZE = 64
 # How often to save losses
 LOSS_SAVE_IDX = 1
 
@@ -100,7 +100,7 @@ NUM_LAYERS = 1
 # Bidirectional option
 BIDIRECTIONAL = False
 # Num_directions is 2 only if bidirectional
-NUM_DIRECTIONS = 2 if BIDIRECTIONAL else 1 
+NUM_DIRECTIONS = 2 if BIDIRECTIONAL else 1
 # Average or sum of glove vectors
 REDUCE_TYPE = 'mean'
 # Number of embeddings in Glove
