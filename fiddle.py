@@ -61,6 +61,8 @@ def main():
     lstm = LSTM(model_options, embeddings)
     lstm_weights(lstm)
 
+    if torch.cuda.is_available(): lstm = lstm.cuda()
+
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
     lstm_optimizer = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
@@ -80,15 +82,15 @@ def main():
             batch_keys = [x for x in batch_iter if x is not None]
             if len(batch_keys) < constants.BATCH_SIZE: continue
 
-            noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
+            noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1).cuda()
 
             init_model(discriminator, generator, lstm)
 
             # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
             caption_embeds, real_embeds = text_model(batch_keys, caption_dict, word2id, lstm)
 
-            real_img_batch = torch.Tensor(choose_real_image(img_dict, batch_keys))
-            wrong_img_batch = torch.Tensor(choose_wrong_image(img_dict, batch_keys))
+            real_img_batch = torch.Tensor(choose_real_image(img_dict, batch_keys)).cuda()
+            wrong_img_batch = torch.Tensor(choose_wrong_image(img_dict, batch_keys)).cuda()
 
             # Run through generator
             gen_image = generator.forward(caption_embeds, Variable(noise_vec))

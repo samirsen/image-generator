@@ -141,6 +141,9 @@ def text_model(batch_keys, caption_dict, word2id, lstm):
     caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
     real_embeds = lstm.forward(real_captions_batch, torch.FloatTensor(real_masks))
 
+    if torch.cuda.is_available():
+        caption_embeds, real_embeds = caption_embeds.cuda(), real_embeds.cuda() 
+
     return caption_embeds.squeeze(1), real_embeds.squeeze(1)
 
 
