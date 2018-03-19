@@ -19,6 +19,20 @@ def load_glove(paths):
     embeddings, word2id, id2word = (torch.load(path) for path in paths)
     return embeddings, word2id, id2word
 
+def _init_lstm(m):
+    for name, param in lstm.named_parameters():
+        if 'bias' in name:
+            nn.init.constant(param, 0.0)
+        elif 'weight' in name:
+            nn.init.xavier_normal(param)
+
+def lstm_weights(lstm):
+    for name, param in lstm.named_parameters():
+        if 'bias' in name:
+            nn.init.constant(param, 0.0)
+        elif 'weight' in name:
+            nn.init.xavier_normal(param)
+
 def main():
     print("Starting LSTM training for CLS GAN ...")
 
@@ -45,7 +59,7 @@ def main():
     print ( "shape of embedding size: ", embeddings.size() )
 
     lstm = LSTM(model_options, embeddings)
-    # lstm.apply(weights_init)
+    lstm_weights(lstm)
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
