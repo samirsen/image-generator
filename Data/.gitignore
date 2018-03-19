@@ -1,4 +1,0 @@
-# Keep directories but ignore files
-*
-
-!.gitignore
