@@ -45,6 +45,7 @@ def main():
     print ( "shape of embedding size: ", embeddings.size() )
 
     lstm = LSTM(model_options, embeddings)
+    # lstm.apply(weights_init)
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
@@ -94,7 +95,7 @@ def main():
             d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
             d_loss = d_real_loss + d_fake_loss + d_wrong_loss
 
-            d_loss.backward()
+            d_loss.backward(retain_graph=True)
             d_optimizer.step()
 
             ########## TRAIN GENERATOR ##########
@@ -110,8 +111,15 @@ def main():
             new_fake_img_passed = discriminator.forward(gen_image, real_embeds)
             g_loss = f.binary_cross_entropy(new_fake_img_passed, torch.ones_like(fake_img_passed))
 
-            g_loss.backward()
+            g_loss.backward(retain_graph=True)
             g_optimizer.step()
+
+            ########## TRAIN LSTM ##############
+            lstm.zero_grad()
+            lstm_loss = g_loss
+
+            lstm_loss.backward(retain_graph=True)
+            lstm_optimizer.step()
 
             if i % constants.LOSS_SAVE_IDX == 0:
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
