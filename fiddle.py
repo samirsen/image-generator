@@ -19,7 +19,7 @@ def load_glove(paths):
     return embeddings, word2id, id2word
 
 def main():
-    print("Starting to figure out GloVE embedding layer for lstm models ...")
+    print("Starting LSTM training for CLS GAN ...")
 
     model_options = constants.MAIN_MODEL_OPTIONS
     caption_dict = load_flowers_capt_dict(data_dir='Data')   # filename --> [captions]
@@ -47,26 +47,27 @@ def main():
     # Use this batch as input to BiRNN w LSTM cells
     # TODO: Loop over epochs in constants.NUM_EPOCHS
     ################################
-    st = time.time()
-    for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
-        batch_keys = [x for x in batch_iter if x is not None]
+    for epoch in range(constants.NUM_EPOCHS):
+        print("Epoch %d" % (epoch))
+        st = time.time()
 
-        noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
+        for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
+            batch_keys = [x for x in batch_iter if x is not None]
+            if len(batch_keys) < constants.BATCH_SIZE: continue
 
-        init_model(discriminator, generator)
+            noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
 
-        captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
-        captions_batch = np.array(captions_batch, dtype=np.int64)
+            init_model(discriminator, generator)
 
-        # print "Captions batch: ", captions_batch.shape
-        # print captions_batch
-        # inputs_batch = torch.LongTensor(captions_batch)
-        # print('type: ', type(inputs_batch[0][0]))
-        # print "Long Tensor: ", inputs_batch
+            captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
+            captions_batch = np.array(captions_batch, dtype=np.int64)
 
-        # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
-        caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
-        break
+            
+
+            # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
+            caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
+
+
 
 
 if __name__ == '__main__':
