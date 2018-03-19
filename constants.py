@@ -3,8 +3,6 @@ constants.py
 Holds all of the constants info of the project
 '''
 
-
-
 '''
 Experimental management constants
 '''
@@ -45,7 +43,7 @@ main.py
 REGEN_IMAGE = True
 # Conditional Loss Sensitivity (CLS)
 # Add the option of penalizing GAN for matching image with wrong caption
-USE_CLS = False
+USE_CLS = True
 # Real loss sensitivity
 # Penalizes G and help D when the D output of fake image differs from real image input
 USE_REAL_LS = False

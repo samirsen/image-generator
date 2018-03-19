@@ -18,6 +18,8 @@ import argparse
 import time
 import os
 
+from data_batcher import *
+
 def grouper(array, n):
     args = [iter(array)] * n
     return izip_longest(*args)
@@ -139,7 +141,7 @@ def text_model(batch_keys, caption_dict, word2id, lstm):
     caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
     real_embeds = lstm.forward(real_captions_batch, torch.FloatTensor(real_masks))
 
-    return caption_embeds, real_embeds
+    return caption_embeds.squeeze(1), real_embeds.squeeze(1)
 
 
 def get_batches(caption_dict, img_dict, batch_keys, noise_vec):

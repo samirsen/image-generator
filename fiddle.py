@@ -56,6 +56,7 @@ def main():
     # Use generator loss to update lstm -- look into line 229, main.py
     # TODO: Loop over epochs in constants.NUM_EPOCHS
     ################################
+    num_iterations = 0
     for epoch in range(constants.NUM_EPOCHS):
         print("Epoch %d" % (epoch))
         st = time.time()
@@ -76,6 +77,7 @@ def main():
 
             # Run through generator
             gen_image = generator.forward(caption_embeds, Variable(noise_vec))
+
             real_img_passed = discriminator.forward(Variable(real_img_batch), real_embeds)
             fake_img_passed = discriminator.forward(gen_image.detach(), real_embeds)
             wrong_img_passed = discriminator.forward(Variable(wrong_img_batch), real_embeds)
@@ -87,9 +89,9 @@ def main():
             # log(1 - y_w) is the caption loss sensitivity CLS (makes sure that captions match the image)
             # L_D = log(y_r) + log(1 - y_w) + log(1 - y_f)
             # Add one-sided label smoothing to the real images of the discriminator
-            d_real_loss = func.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - model_options['label_smooth'])
-            d_fake_loss = func.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
-            d_wrong_loss = func.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
+            d_real_loss = f.binary_cross_entropy(real_img_passed, torch.ones_like(real_img_passed) - model_options['label_smooth'])
+            d_fake_loss = f.binary_cross_entropy(fake_img_passed, torch.zeros_like(fake_img_passed))
+            d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
             d_loss = d_real_loss + d_fake_loss + d_wrong_loss
 
             d_loss.backward()
@@ -106,7 +108,7 @@ def main():
             gen_image = generator.forward(caption_embeds, Variable(noise_vec))
 
             new_fake_img_passed = discriminator.forward(gen_image, real_embeds)
-            g_loss = func.binary_cross_entropy(new_fake_img_passed, torch.ones_like(fake_img_passed))
+            g_loss = f.binary_cross_entropy(new_fake_img_passed, torch.ones_like(fake_img_passed))
 
             g_loss.backward()
             g_optimizer.step()
@@ -115,7 +117,10 @@ def main():
                 losses['train']['generator'].append((g_loss.data[0], epoch, i))
                 losses['train']['discriminator'].append((d_loss.data[0], epoch, i))
 
-        print ('Total number of iterations: ', i)
+            num_iterations += 1
+            print ('batch ' + str(i) + ' complete.')
+
+        print ('Total number of iterations: ', num_iterations)
         print ('Training G Loss: ', g_loss.data[0])
         print ('Training D Loss: ', d_loss.data[0])
         epoch_time = time.time()-st
@@ -133,7 +138,7 @@ def main():
                     normalize=True)
 
         # Save model
-        if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:
+        if epoch % constants.CHECKPOINT_FREQUENCY == 0 and epoch != 0 or epoch == constants.NUM_EPOCHS - 1:
             save_checkpoint = {
                 'epoch': epoch,
                 'g_dict': generator.state_dict(),
