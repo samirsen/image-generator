@@ -122,9 +122,10 @@ def choose_optimizer(generator, discriminator):
     return g_optimizer, d_optimizer
 
 
-def init_model(discriminator, generator):
+def init_model(discriminator, generator, lstm):
     discriminator.train()
     generator.train()
+    lstm.train()
     # Zero out gradient
     discriminator.zero_grad()
     for p in discriminator.parameters():

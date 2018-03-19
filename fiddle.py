@@ -41,6 +41,7 @@ def main():
 
     generator, discriminator = choose_model(model_options)
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
+    lstm_optimizer = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
 
     ################################
     # Now get batch of captions and glove embeddings
@@ -57,12 +58,12 @@ def main():
 
             noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1)
 
-            init_model(discriminator, generator)
+            init_model(discriminator, generator, lstm)
 
             captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
             captions_batch = np.array(captions_batch, dtype=np.int64)
 
-            
+
 
             # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
             caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
