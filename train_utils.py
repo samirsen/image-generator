@@ -131,6 +131,17 @@ def init_model(discriminator, generator, lstm):
     for p in discriminator.parameters():
         p.requires_grad = True
 
+def text_model(batch_keys, caption_dict, word2id, lstm):
+    captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
+    real_captions_batch, real_masks = get_captions_batch(batch_keys, caption_dict, word2id)
+    captions_batch, real_captions_batch = np.array(captions_batch, dtype=np.int64), np.array(real_captions_batch, dtype=np.int64)
+
+    caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
+    real_embeds = lstm.forward(real_captions_batch, torch.FloatTensor(real_masks))
+
+    return caption_embeds, real_embeds
+
+
 def get_batches(caption_dict, img_dict, batch_keys, noise_vec):
     if torch.cuda.is_available():
         g_captions = get_text_description(caption_dict, batch_keys)

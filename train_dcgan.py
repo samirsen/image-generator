@@ -185,6 +185,7 @@ def main():
             # L_G = log(y_f)
             g_loss = func.binary_cross_entropy(new_fake_img_passed, torch.ones_like(fake_img_passed))
 
+
             g_loss.backward()
             g_optimizer.step()
 
