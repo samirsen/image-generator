@@ -65,9 +65,9 @@ def main():
         # print "Long Tensor: ", inputs_batch
 
 
-        caption_embeds = lstm.forward(captions_batch, masks)
+        caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
         # print ( "Here are the embeddings, ", caption_embeds )
-        
+        break
 
 
 if __name__ == '__main__':
