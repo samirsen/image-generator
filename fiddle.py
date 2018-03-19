@@ -64,9 +64,8 @@ def main():
         # print('type: ', type(inputs_batch[0][0]))
         # print "Long Tensor: ", inputs_batch
 
-
+        # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
         caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
-        # print ( "Here are the embeddings, ", caption_embeds )
         break
 
 
