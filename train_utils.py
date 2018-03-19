@@ -121,26 +121,6 @@ def choose_optimizer(generator, discriminator):
 
     return g_optimizer, d_optimizer
 
-def init_txt_model(model_options):
-    if torch.cuda.is_available():
-        text_model = TextModel(model_options).cuda()
-    else:
-        text_model = TextModel(model_options)
-
-    txt_optim = optim.Adam(text_model.parameters(), lr = constants.LR, betas = constants.BETAS)
-    return text_model, txt_optim
-
-def init_lstm(model_options):
-    if torch.cuda.is_available():
-        lstm = LSTM_Model(model_options).cuda()
-    else:
-        lstm = LSTM_Model(model_options)
-
-    lstm.apply(weights_init)
-    lstm_optim = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
-
-    return lstm, lstm_optim
-
 
 def init_model(discriminator, generator):
     discriminator.train()
