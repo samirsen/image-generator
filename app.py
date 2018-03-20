@@ -29,7 +29,7 @@ def predict():
 	if torch.cuda.is_available():
 		encoded = encoded.cuda()
 	image_paths = []
-	
+
 	for batch_i in range(BATCH_SIZE):
 		noise_vec = Variable(torch.randn(len(queries), 100, 1, 1))
 		if torch.cuda.is_available():
@@ -39,7 +39,7 @@ def predict():
 		gen_images = gen_images.cpu()
 
 		for i, img in enumerate(gen_images):
-			curr = gen_images[0].data.numpy()
+			curr = img.data.numpy()
 			curr = np.swapaxes(curr, 0, 1)
 			curr = np.swapaxes(curr, 1, 2)
 			path = 'Data/samples/' + str(batch_i) + '_' + str(i) + '.png'
