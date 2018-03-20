@@ -14,39 +14,37 @@ nltk.download('punkt')
 
 app = Flask(__name__)
 
-WEIGHTS_EPOCH = 520
+WEIGHTS_EPOCH = 520 
 BATCH_SIZE = 32
 
 @app.route('/')
 def index():
 	return render_template('index.html')
 
-@app.route('/predict')
+@app.route('/predict', methods=['POST'])
 def predict():
-	# input_query = request.get_json(silent=True, force=True)['input']
-	query = "This is a red flower with yellow stamen."
-	queries = [query]
+	queries = request.get_json(silent=True, force=True)['input']
+	# query = "This is a red flower with yellow stamen."
 	encoded = Variable(torch.Tensor(skipthoughts.encode(model, queries)))
-	print(encoded.size())
-	encoded = encoded.repeat(BATCH_SIZE, 1)
-	print(encoded.size())
-	noise_vec = Variable(torch.randn(BATCH_SIZE, 100, 1, 1))
-	print(noise_vec.size())
 	if torch.cuda.is_available():
 		encoded = encoded.cuda()
-		noise_vec = noise_vec.cuda()
-
-	gen_images = generator.forward(encoded, noise_vec)
-	gen_images = gen_images.cpu()
 	image_paths = []
+	noise_vec = Variable(torch.randn(len(queries), 100, 1, 1))
+	for batch_i in range(BATCH_SIZE):
+		
+		if torch.cuda.is_available():
+			noise_vec = noise_vec.cuda()
 
-	for i, img in enumerate(gen_images):
-		curr = img.data.numpy()
-		curr = np.swapaxes(curr, 0, 1)
-		curr = np.swapaxes(curr, 1, 2)
-		path = 'Data/samples/' + str(i) + '.png'
-		scipy.misc.imsave(path, curr)
-		image_paths.append(path)
+		gen_images = generator.forward(encoded, noise_vec)
+		gen_images = gen_images.cpu()
+
+		for i, img in enumerate(gen_images):
+			curr = gen_images[0].data.numpy()
+			curr = np.swapaxes(curr, 0, 1)
+			curr = np.swapaxes(curr, 1, 2)
+			path = 'Data/samples/' + str(batch_i) + '_' + str(i) + '.png'
+			scipy.misc.imsave(path, curr)
+			image_paths.append(path)
 	
 
 	return jsonify({'images': image_paths})
@@ -92,8 +90,8 @@ if __name__ == '__main__':
 
 
 
-	generator.eval()
-	discriminator.eval()
+	generator.train()
+	discriminator.train()
 
 	model = skipthoughts.load_model()
 
