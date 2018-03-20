@@ -29,9 +29,9 @@ def predict():
 	if torch.cuda.is_available():
 		encoded = encoded.cuda()
 	image_paths = []
-	noise_vec = Variable(torch.randn(len(queries), 100, 1, 1))
+	
 	for batch_i in range(BATCH_SIZE):
-		
+		noise_vec = Variable(torch.randn(len(queries), 100, 1, 1))
 		if torch.cuda.is_available():
 			noise_vec = noise_vec.cuda()
 
