@@ -15,6 +15,10 @@ from data_batcher import *
 import numpy as np
 import matplotlib.pyplot as plt
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--resume')
+args = parser.parse_args()
+
 def load_glove(paths):
     embeddings, word2id, id2word = (torch.load(path) for path in paths)
     return embeddings, word2id, id2word
@@ -67,6 +71,35 @@ def main():
     g_optimizer, d_optimizer = choose_optimizer(generator, discriminator)
     lstm_optimizer = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
 
+    ########## RESUME OPTION ##########
+    if args.resume:
+        print("Resuming from epoch " + args.resume)
+        checkpoint = torch.load(constants.SAVE_PATH + 'weights/epoch' + str(args.resume))
+        new_epoch = checkpoint['epoch'] + 1
+        generator.load_state_dict(checkpoint['g_dict'])
+        discriminator.load_state_dict(checkpoint['d_dict'])
+        lstm.load_state_dict(checkpoint['lstm_dict'])
+        g_optimizer.load_state_dict(checkpoint['g_optimizer'])
+        d_optimizer.load_state_dict(checkpoint['d_optimizer'])
+        losses = torch.load(constants.SAVE_PATH + 'losses')
+
+    ########## VARIABLES ##########
+    noise_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['z_dim'], 1, 1)
+    # text_vec = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+    real_img = torch.FloatTensor(constants.BATCH_SIZE, model_options['image_channels'], constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+    real_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+    if constants.USE_CLS:
+        wrong_img = torch.FloatTensor(constants.BATCH_SIZE, model_options['image_channels'], constants.IMAGE_SIZE, constants.IMAGE_SIZE)
+        wrong_caption = torch.FloatTensor(constants.BATCH_SIZE, model_options['caption_vec_len'])
+
+    # Add cuda GPU option
+    if torch.cuda.is_available():
+        noise_vec = noise_vec.cuda()
+        # text_vec = text_vec.cuda()
+        real_img = real_img.cuda()
+        # real_caption = real_caption.cuda()
+        if constants.USE_CLS: wrong_img = wrong_img.cuda()
+
     ################################
     # Now get batch of captions and glove embeddings
     # Use this batch as input to BiRNN w LSTM cells
@@ -81,23 +114,41 @@ def main():
         for i, batch_iter in enumerate(grouper(caption_dict.keys(), constants.BATCH_SIZE)):
             batch_keys = [x for x in batch_iter if x is not None]
             if len(batch_keys) < constants.BATCH_SIZE: continue
-
-            noise_vec = torch.randn(len(batch_keys), model_options['z_dim'], 1, 1).cuda()
+            curr_batch_size = len(batch_keys)
 
             init_model(discriminator, generator, lstm)
 
-            # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
+            ########## BATCH DATA #########
+            noise_batch = torch.randn(curr_batch_size, model_options['z_dim'], 1, 1)
             caption_embeds, real_embeds = text_model(batch_keys, caption_dict, word2id, lstm)
+            real_img_batch = torch.Tensor(choose_real_image(img_dict, batch_keys))
+            if constants.USE_CLS: wrong_img_batch = torch.Tensor(util.choose_wrong_image(train_image_dict, batch_keys))
+            if torch.cuda.is_available():
+                noise_batch = noise_batch.cuda()
+                real_img_batch = real_img_batch.cuda()
+                if constants.USE_CLS: wrong_img_batch = wrong_img_batch.cuda()
 
-            real_img_batch = torch.Tensor(choose_real_image(img_dict, batch_keys)).cuda()
-            wrong_img_batch = torch.Tensor(choose_wrong_image(img_dict, batch_keys)).cuda()
+            # Fill in tensors with batch data
+            noise_vec.resize_as_(noise_batch).copy_(noise_batch)
+            # text_vec.resize_as_(caption_embeds).copy_(caption_embeds)
+            # real_caption.resize_as_(real_embeds).copy_(real_embeds)
+            real_img.resize_as_(real_img_batch).copy_(real_img_batch)
+            if constants.USE_CLS: wrong_img.resize_as_(wrong_img_batch).copy_(wrong_img_batch)
+
+
+
+            # Returns variable tensor of size (BATCH_SIZE, 1, 4800)
+            # caption_embeds, real_embeds = text_model(batch_keys, caption_dict, word2id, lstm)
+
+            # real_img_batch = torch.Tensor(choose_real_image(img_dict, batch_keys))
+            # wrong_img_batch = torch.Tensor(choose_wrong_image(img_dict, batch_keys))
 
             # Run through generator
-            gen_image = generator.forward(caption_embeds, Variable(noise_vec))
+            gen_image = generator.forward(Variable(text_vec), Variable(noise_vec))
 
-            real_img_passed = discriminator.forward(Variable(real_img_batch), real_embeds)
-            fake_img_passed = discriminator.forward(gen_image.detach(), real_embeds)
-            wrong_img_passed = discriminator.forward(Variable(wrong_img_batch), real_embeds)
+            real_img_passed = discriminator.forward(Variable(real_img_batch), Variable(real_caption))
+            fake_img_passed = discriminator.forward(gen_image.detach(), Variable(real_caption))
+            wrong_img_passed = discriminator.forward(Variable(wrong_img_batch), Variable(real_caption))
 
             ########## TRAIN DISCRIMINATOR ##########
             # Overall loss function for discriminator
@@ -111,7 +162,7 @@ def main():
             d_wrong_loss = f.binary_cross_entropy(wrong_img_passed, torch.zeros_like(wrong_img_passed))
             d_loss = d_real_loss + d_fake_loss + d_wrong_loss
 
-            d_loss.backward(retain_graph=True)
+            d_loss.backward()
             d_optimizer.step()
 
             ########## TRAIN GENERATOR ##########
@@ -122,19 +173,19 @@ def main():
             # Regenerate the image
             noise_vec = torch.randn(constants.BATCH_SIZE, model_options['z_dim'], 1, 1)
             if torch.cuda.is_available():noise_vec = noise_vec.cuda()
-            gen_image = generator.forward(caption_embeds, Variable(noise_vec))
+            gen_image = generator.forward(Variable(text_vec), Variable(noise_vec))
 
             new_fake_img_passed = discriminator.forward(gen_image, real_embeds)
             g_loss = f.binary_cross_entropy(new_fake_img_passed, torch.ones_like(fake_img_passed))
 
-            g_loss.backward(retain_graph=True)
+            g_loss.backward()
             g_optimizer.step()
 
             ########## TRAIN LSTM ##############
             lstm.zero_grad()
             lstm_loss = g_loss
 
-            lstm_loss.backward(retain_graph=True)
+            lstm_loss.backward()
             lstm_optimizer.step()
 
             if i % constants.LOSS_SAVE_IDX == 0:
@@ -167,6 +218,7 @@ def main():
                 'epoch': epoch,
                 'g_dict': generator.state_dict(),
                 'd_dict': discriminator.state_dict(),
+                'lstm_dict': lstm.state_dict(),
                 'g_optimizer': g_optimizer.state_dict(),
                 'd_optimizer': d_optimizer.state_dict(),
             }
