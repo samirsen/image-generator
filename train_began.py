@@ -288,7 +288,7 @@ def main():
         #             normalize=True)
 
         # Save model
-        if epoch % 20 == 0 or epoch == constants.NUM_EPOCHS - 1:
+        if epoch % constants.CHECKPOINT_FREQUENCY == 0 and epoch != 0 or epoch == constants.NUM_EPOCHS - 1:
             save_checkpoint = {
                 'epoch': epoch,
                 'g_dict': generator.state_dict(),
@@ -297,7 +297,6 @@ def main():
                 'd_optimizer': d_optimizer.state_dict(),
                 'began_k': began_k
             }
-
             torch.save(save_checkpoint, constants.SAVE_PATH + 'weights/epoch' + str(epoch))
 
 

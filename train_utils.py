@@ -18,6 +18,8 @@ import argparse
 import time
 import os
 
+from data_batcher import *
+
 def grouper(array, n):
     args = [iter(array)] * n
     return izip_longest(*args)
@@ -121,34 +123,29 @@ def choose_optimizer(generator, discriminator):
 
     return g_optimizer, d_optimizer
 
-def init_txt_model(model_options):
-    if torch.cuda.is_available():
-        text_model = TextModel(model_options).cuda()
-    else:
-        text_model = TextModel(model_options)
 
-    txt_optim = optim.Adam(text_model.parameters(), lr = constants.LR, betas = constants.BETAS)
-    return text_model, txt_optim
-
-def init_lstm(model_options):
-    if torch.cuda.is_available():
-        lstm = LSTM_Model(model_options).cuda()
-    else:
-        lstm = LSTM_Model(model_options)
-
-    lstm.apply(weights_init)
-    lstm_optim = optim.Adam(lstm.parameters(), lr=constants.LR, betas=constants.BETAS)
-
-    return lstm, lstm_optim
-
-
-def init_model(discriminator, generator):
+def init_model(discriminator, generator, lstm):
     discriminator.train()
     generator.train()
+    lstm.train()
     # Zero out gradient
     discriminator.zero_grad()
     for p in discriminator.parameters():
         p.requires_grad = True
+
+def text_model(batch_keys, caption_dict, word2id, lstm):
+    captions_batch, masks = get_captions_batch(batch_keys, caption_dict, word2id)
+    real_captions_batch, real_masks = get_captions_batch(batch_keys, caption_dict, word2id)
+    captions_batch, real_captions_batch = np.array(captions_batch, dtype=np.int64), np.array(real_captions_batch, dtype=np.int64)
+
+    caption_embeds = lstm.forward(captions_batch, torch.FloatTensor(masks))
+    real_embeds = lstm.forward(real_captions_batch, torch.FloatTensor(real_masks))
+
+    if torch.cuda.is_available():
+        caption_embeds, real_embeds = caption_embeds.cuda(), real_embeds.cuda() 
+
+    return caption_embeds.squeeze(1), real_embeds.squeeze(1)
+
 
 def get_batches(caption_dict, img_dict, batch_keys, noise_vec):
     if torch.cuda.is_available():

@@ -15,6 +15,9 @@ import torch
 from itertools import izip_longest
 from glove import Glove
 
+import torch
+import torch.nn as nn
+
 
 # Makes the directories of they don't already exist
 def make_directories():
@@ -134,6 +137,8 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+    elif classname.find('Embedding') != -1:
+        m.weight.data.fill_(1.0)
     elif classname.find('LSTM') != -1:
         nn.init.xavier_uniform(m.weight)
         m.bias.data.fill_(0)
