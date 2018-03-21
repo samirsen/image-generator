@@ -2,7 +2,7 @@ import flask
 from flask import Flask, jsonify, request, render_template
 import sys
 import skipthoughts 
-from demo_model import BeganGenerator, BeganDiscriminator
+from demo_model import CondBeganGenerator, CondBeganDiscriminator
 import torch
 import scipy.misc
 import constants
@@ -13,7 +13,7 @@ nltk.download('punkt')
 
 app = Flask(__name__)
 
-WEIGHTS_EPOCH = 520 
+WEIGHTS_EPOCH = 1140 
 BATCH_SIZE = 32
 
 @app.route('/')
@@ -53,12 +53,12 @@ def predict():
 if __name__ == '__main__':
 	
 
-	model_option = {
-    'verbose':PRINT_MODEL_STATUS,   # Prints out info about the model
+	model_options = {
+    'verbose':True,   # Prints out info about the model
     'caption_vec_len':4800,         # Dimensions for the embedded captions vector
     't_dim':256,                    # Dimensions for the text vector input into the GAN
     'z_dim':100,                    # Dimensions for the noise vector input into the GAN
-    'image_size':IMAGE_SIZE,           # Number of pixels in each dimension of the image
+    'image_size':128,           # Number of pixels in each dimension of the image
     'num_gf':64,                    # Number of generator filters in first layer of generator
     'num_df':64,                    # Number of discriminator filters in first layer of discriminator
     'image_channels':3,             # Number of channels for the output of the generator and input of discriminator
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                                     # e.g. with label_smooth of 0.1, instead of real label = 1, we have real_label = 1 - 0.1
                                     # https://arxiv.org/pdf/1606.03498.pdf
     # CLS (Conditional Loss Sensitivity) Options
-    'use_cls':USE_CLS,
+    'use_cls':True,
     # WGAN Options
     'wgan_d_iter':5,                # Number of times to train D before training G
     # BEGAN OPTIONS
@@ -75,8 +75,8 @@ if __name__ == '__main__':
     'began_lambda_k':0.001,         # Learning rate for k of BEGAN model
     'began_hidden_size':64,         # Hidden size for embedder of BEGAN model
     }
-	generator = BeganGenerator(model_options)
-	discriminator = BeganDiscriminator(model_options)
+	generator = CondBeganGenerator(model_options)
+	discriminator = CondBeganDiscriminator(model_options)
 
 	print("Created generator and discriminator")
 
@@ -95,8 +95,8 @@ if __name__ == '__main__':
 	discriminator.began_k = checkpoint['began_k']
 
 
-	generator.eval()
-	discriminator.eval()
+	generator.train()
+	discriminator.train()
 
 	model = skipthoughts.load_model()
 
