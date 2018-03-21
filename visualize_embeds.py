@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 import torch.optim as optim
+import numpy as np
 from torch.autograd import Variable
 from lstm_model import LSTM
 from vocab import get_glove
@@ -17,7 +18,7 @@ from matplotlib import pyplot as plt
 
 np.random.seed(42)
 
-COLOR_VEC = ['b', 'g', 'r', 'm', 'y', 'c', 'k']
+COLOR_VEC = ['b', 'g', 'c', 'm', 'y', 'r', 'k']
 
 def load_glove(paths):
     embeddings, word2id, id2word = (torch.load(path) for path in paths)
@@ -97,82 +98,24 @@ def get_colors(labels):
 
     return colors
 
-def fix_data(x_data, y_data):
-    x, y = [], []
-    for i, label in enumerate(y_data):
-        if label < 7:
-            x.append(y_data[i])
-            y.append(label)
+print("Visualizing the caption_embeddings ...")
+skip_thoughts = load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
+labels = relabel_embeds()
+print skip_thoughts.shape
+print labels.shape
 
-    return np.array(x), np.array(y)
+# perform t-SNE embedding
+vis_data = TSNE(n_components=2).fit_transform(skip_thoughts)
 
-# def wrangle_data(y_data):
-#     confuse = [3, 2, 4]
-#     for i, label in enumerate(y_data):
-#         if label == 7: y_data[i] = 3
-#         elif label == 8: y_data[i] = 0
-#         elif label == 9: y_data[i] = 4
-#
-#         if i % 100 == 0: print ("finished new batch " + str(i))
-
-    # for i in range(5000, 5700):
-    #     y_data[i] = np.random.randint(9)
-    #
-    #     if i % 100 == 0: print ("finished new batch " + str(i))
-
-    # return y_data
-
-
-# print("Visualizing the caption_embeddings ...")
-# skip_thoughts = load_text_vec('Data', constants.VEC_OUTPUT_FILE_NAME)
-# labels = relabel_embeds()
-# print skip_thoughts.shape
-# print labels.shape
-#
-# # perform t-SNE embedding
-# vis_data = TSNE(n_components=2).fit_transform(skip_thoughts)
-#
-# # plot the result
-# vis_x = vis_data[:, 0]
-# vis_y = vis_data[:, 1]
-#
-# # get the colors for the different classes
-# print labels
-# colors = get_colors(labels)
-#
-# plt.scatter(vis_x, vis_y, c=colors, alpha=0.5)
-# # plt.colorbar(ticks=range(102))
-# # plt.clim(-0.5, 9.5)
-# plt.show()
-data = OfficialImageClassification(x_dtype="float32")
-
-x_data = data.all_images
-y_data = data.all_labels
-
-x_data = np.asarray(x_data).astype('float64')
-x_data = x_data.reshape((x_data.shape[0], -1))
-
-print ("loaded data ...")
-
-# For speed of computation, only run on a subset
-n = 10000
-x_data = x_data[:n]
-y_data = y_data[:n]
-
-x, y = fix_data(x_data, y_data)
-
-print("got data splits ... ")
-
-# labels = wrangle_data(y_data)
-
-print("finished fixing data... starting TSNE")
-
-vis_data = TSNE(n_components=2).fit_transform(x_data)
-
+# plot the result
 vis_x = vis_data[:, 0]
 vis_y = vis_data[:, 1]
 
-colors = get_colors(y)
+# get the colors for the different classes
+print labels
+colors = get_colors(labels)
 
 plt.scatter(vis_x, vis_y, c=colors, alpha=0.5)
+# plt.colorbar(ticks=range(102))
+# plt.clim(-0.5, 9.5)
 plt.show()
