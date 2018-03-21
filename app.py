@@ -90,8 +90,8 @@ if __name__ == '__main__':
 
 
 
-	generator.train()
-	discriminator.train()
+	generator.eval()
+	discriminator.eval()
 
 	model = skipthoughts.load_model()
 
