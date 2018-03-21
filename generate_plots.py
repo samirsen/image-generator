@@ -18,6 +18,7 @@ def plot_losses(mode):
 
 	gen_losses = smooth_losses(gen_losses)
 	dis_losses = smooth_losses(dis_losses)
+	
 
 	assert(num_epochs == len(gen_losses))
 	
@@ -32,12 +33,20 @@ def smooth_losses(losses):
 	sum_loss = 0.0
 	count = 0
 	current_epoch = 0
+	marked = False
 	for loss_tuple in losses:
 		epoch = loss_tuple[1]
 		if epoch == current_epoch:
+			if marked:
+				continue
 			sum_loss += loss_tuple[0]
 			count += 1
 		else:
+			if epoch < current_epoch:
+				marked = True
+				continue
+			marked = False
+			print('w', current_epoch, epoch, len(new_losses), count)
 			new_losses.append(sum_loss / count)
 			current_epoch = epoch
 			sum_loss = loss_tuple[0]
