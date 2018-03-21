@@ -31,7 +31,7 @@ DIRECTORY_PATH = ENTIRE_DATASET
 
 # The name of the output file that the word vectors will be saved as.
 # This file name should end with '.hdf5'
-VEC_OUTPUT_FILE_NAME = 'flower_tv.hdf5'
+VEC_OUTPUT_FILE_NAME = 'full_flowers_tv.hdf5'
 
 '''
 Model Constants
