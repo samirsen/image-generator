@@ -9,9 +9,10 @@ from torchvision.models.inception import inception_v3
 import numpy as np
 from scipy.stats import entropy
 
-def get_pred(x, resize):
-    upsample = nn.Upsample(size=(299, 299), mode='bilinear').type(dtype)
-    if resize: x = upsample(x)
+def get_pred(x, resize, inception_model):
+    upsample = nn.Upsample(size=(299, 299), mode='bilinear')
+    # if resize: x = upsample(x)
+    x = upsample(x)
     x = inception_model(x)
     return F.softmax(x).data.cpu().numpy()
 
@@ -34,18 +35,23 @@ def inception_score(imgs, batch_size=32, resize=False, splits=1):
     dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size)
 
     # Load inception model
-    inception_model = inception_v3(pretrained=True, transform_input=False).type(dtype)
+    inception_model = inception_v3(pretrained=True, transform_input=False)
     inception_model.eval();
 
     # Get predictions
-    preds = np.zeros((N, 1000))
+    preds = np.zeros((N, 1000)
+    
+    # for i, batch in enumerate(imgs):
+    #     if i < 3: print batch
+    #     batchv = Variable(batch)
+    #     preds[i] = get_pred(batch, resize, inception_model)
 
     for i, batch in enumerate(dataloader, 0):
-        batch = batch.type(dtype)
+        print batch
         batchv = Variable(batch)
         batch_size_i = batch.size()[0]
 
-        preds[i*batch_size:i*batch_size + batch_size_i] = get_pred(batchv, resize)
+        preds[i*batch_size:i*batch_size + batch_size_i] = get_pred(batchv, resize, inception_model)
 
     # Now compute the mean kl-div
     split_scores = []
@@ -61,5 +67,5 @@ def inception_score(imgs, batch_size=32, resize=False, splits=1):
 
     return np.mean(split_scores), np.std(split_scores)
 
-scores = inception_score(imgs, batch_size=32, resize=False, splits=1)
-print (scores)
+# scores = inception_score(imgs, batch_size=32, resize=False, splits=1)
+# print (scores)
