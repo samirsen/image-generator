@@ -1,0 +1,47 @@
+<html>
+<head>
+<script>
+function sendRequest(){
+	var http = new XMLHttpRequest();
+	var url = "/predict";
+	dict = {"input": ["a beautful blue rose", "the flower is red and yellow with yellow stamen", "the flower is green with red petals", "this flower is orange with shades of red", "this flower is slightly green with a hint of red", "this flower shines a beautiful red color", "the flower is mostly red, with bright purple petals", "the flower is largely orange, with green undertones"]}
+	var params = JSON.stringify(dict);
+	http.open("POST", url, true);
+
+	//Send the proper header information along with the request
+	http.setRequestHeader("Content-type", "application/json");
+	message = document.getElementById("message")
+	message.innerText = "Generating images..."
+	http.onreadystatechange = function() {//Call a function when the state changes.
+	    if(http.readyState == 4 && http.status == 200) {
+	    	message.innerText = ""
+	        alert("Images generated!")
+	    }
+	}
+	http.send(params);
+}
+</script>
+
+<style>
+body {background:black; font-size: 65px; color: white; font-family: 'Helvetica'; padding-top:100px;}
+span {font-size:20px;}
+button {float:center; margin-top: 30px; font-size: 30px; background: black; color: white; border: 1px solid white; padding: 8px 15px;}
+div { text-align: center;  margin-left: auto; margin-right: auto;}
+button:hover {background: white; color: black;}
+#examples {font-size:16px;}
+</style>
+
+</head>
+
+<body><div><p>
+	IMAGAN</p><p>
+	<span><b>Watch our model generate images of flowers in real time!</b></span></p><p><span id="examples">Example Captions:<br />the flower has petals that are bright pinkish purple with white stigma<br />this flower is orange with shades of red<br />the flower is mostly red, with bright purple petals</span></p>
+
+<a href="#"><button onclick="sendRequest()">Generate Images</button></a>
+
+<p>
+	<span id="message"></span></p>
+</div>
+
+</body>
+</html>

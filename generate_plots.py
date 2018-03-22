@@ -19,12 +19,16 @@ def plot_losses(mode):
 	gen_losses = smooth_losses(gen_losses)
 	dis_losses = smooth_losses(dis_losses)
 
-	assert(num_epochs == len(gen_losses))
+	# assert(num_epochs == len(gen_losses))
 	
 	print("Plotting losses for %d epochs" % num_epochs)
 
-	plt.plot(range(num_epochs), gen_losses)
-	plt.plot(range(num_epochs), dis_losses)
+	plt.plot(range(len(gen_losses)), gen_losses, label="Generator")
+	plt.plot(range(len(gen_losses)), dis_losses, label="Discriminator")
+	plt.title("Loss Curve")
+	plt.ylabel("Loss")
+	plt.xlabel("Epoch")
+	plt.legend()
 	plt.show()
 
 def smooth_losses(losses):
